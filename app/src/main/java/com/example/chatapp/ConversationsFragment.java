@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModelProviders;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,7 +19,7 @@ import java.util.List;
 
 
 public class ConversationsFragment extends Fragment {
-    List<Conversations> conversationss = new ArrayList<>();
+    List<Pair<User , String>> conversationss = new ArrayList<>();
     RecyclerView recyclerView;
     ConversationsAdapter conversationsAdapter = new ConversationsAdapter(getActivity(), conversationss);
 
@@ -34,9 +35,9 @@ public class ConversationsFragment extends Fragment {
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
         recyclerView.setAdapter(conversationsAdapter);
 
-        mConversationsViewModel.getConversations().observe(this, new Observer<List<Conversations>>() {
+        mConversationsViewModel.getConversations().observe(this, new Observer<List<Pair<User , String>>>() {
             @Override
-            public void onChanged(List<Conversations> conversation) {
+            public void onChanged(List<Pair<User , String>> conversation) {
                 if(conversation != null) {
                     conversationss.clear();
                     conversationss.addAll(conversation);
