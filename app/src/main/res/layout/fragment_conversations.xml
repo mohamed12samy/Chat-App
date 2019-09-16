@@ -9,13 +9,6 @@
         android:id="@+id/conversations_recycler"
         android:layout_width="374dp"
         android:layout_height="wrap_content"
-        android:layout_margin="16dp"></androidx.recyclerview.widget.RecyclerView>
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-
-        android:text="xcccccccccccccccccccccccccccccccccc"
-        />
+        ></androidx.recyclerview.widget.RecyclerView>
 
 </FrameLayout>

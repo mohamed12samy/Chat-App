@@ -11,6 +11,7 @@ import androidx.lifecycle.MutableLiveData;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.Timestamp;
 
@@ -133,8 +134,10 @@ public class Repository {
                         messages.setValue(data);
                     }
                 });
+    }
+
     private MutableLiveData<List<User>> users = new MutableLiveData<>();
-    private MutableLiveData<List<Pair<User , String>>> conversations = new MutableLiveData<>();
+    private MutableLiveData<List<Pair<User, String>>> conversations = new MutableLiveData<>();
 
     public LiveData<List<User>> getUsers() {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
@@ -148,9 +151,9 @@ public class Repository {
                             for (QueryDocumentSnapshot document : task.getResult()) {
                                 Log.d("TAG", document.getId() + " => " + document.getData().get("email"));
 
-                                if (!document.getData().get("email").equals( App.getmFirebaseUser().getEmail())) {
+                                if (!document.getData().get("email").equals(App.getmFirebaseUser().getEmail())) {
 
-                                    Log.d("asdd",document.getData().get("email") +"   "+ App.getmFirebaseUser().getEmail());
+                                    Log.d("asdd", document.getData().get("email") + "   " + App.getmFirebaseUser().getEmail());
 
                                     list.add(new User(document.getId(), document.getData().get("name") + "",
                                             document.getData().get("url_photo") + "", document.getData().get("email") + ""));
@@ -165,23 +168,23 @@ public class Repository {
         return users;
     }
 
-    public LiveData<List<Pair<User , String>>> getConversations() {
+    public LiveData<List<Pair<User, String>>> getConversations() {
 
         Task task1 = db.collection("ChatRooms")
                 .whereEqualTo("UserEmail2", App.getmFirebaseUser().getEmail())
                 .get();
 
         Task task2 = db.collection("ChatRooms")
-                .whereEqualTo("UserEmail1",App.getmFirebaseUser().getEmail())
+                .whereEqualTo("UserEmail1", App.getmFirebaseUser().getEmail())
                 .get();
 
-        Task<List<QuerySnapshot>> task3 = Tasks.whenAllSuccess(task1,task2);
+        Task<List<QuerySnapshot>> task3 = Tasks.whenAllSuccess(task1, task2);
         task3.addOnSuccessListener(new OnSuccessListener<List<QuerySnapshot>>() {
-            List<Pair<User , String>> list1 = new ArrayList<>();
+            List<Pair<User, String>> list1 = new ArrayList<>();
 
             @Override
             public void onSuccess(List<QuerySnapshot> querySnapshots) {
-               // List<Conversations> list = new ArrayList<>();
+                // List<Conversations> list = new ArrayList<>();
 
                 for (QuerySnapshot queryDocumentSnapshots : querySnapshots) {
                     for (final QueryDocumentSnapshot document : queryDocumentSnapshots) {
@@ -189,30 +192,33 @@ public class Repository {
                         Log.d("email2", document.getId() + " => " + document.getData().get("UserEmail2"));
 
                         String email = App.getmFirebaseUser().getEmail().equals(document.getData().get("UserEmail1")) ?
-                                document.getData().get("UserEmail2")+"" :
-                                document.getData().get("UserEmail1")+"";
+                                document.getData().get("UserEmail2") + "" :
+                                document.getData().get("UserEmail1") + "";
 
                         db.collection("Users")
                                 .whereEqualTo("email", email)
-                                .get().addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                                .get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
                             @Override
-                            public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                            public void onComplete(@NonNull Task<QuerySnapshot> task) {
 
-                                User user = queryDocumentSnapshots.toObjects(User.class).get(0);
-                                list1.add(new Pair<>(user,document.getData().get("lastMessage")+""));
+                                for (QueryDocumentSnapshot document1 : task.getResult()) {
+                                    Log.d("popo","ooooooooo  "+document1.getId()+"    "+document1.getData().get("name")
+                                    +"   "+document.getData().get("lastMessage"));
+                                    User user = new User(document1.getId(), document1.getData().get("name") + "",
+                                            document1.getData().get("url_photo") + "", document1.getData().get("email") + "");
+                                    list1.add(new Pair<>(user, document.getData().get("lastMessage") + ""));
+                                    Log.d("rtrt",list1.size()+"");
+                                    conversations.postValue(list1);
+                                }
                             }
                         });
-                        /*list.add(new Conversations(document.getData().get("UserEmail1") + "",
-                                document.getData().get("UserEmail2") + "",
-                                document.getData().get("lastMessage") + ""
-                        ));*/
                     }
                 }
 
-                conversations.postValue(list1);
+
 
             }
-        }) ;
+        });
 
 
         return conversations;
