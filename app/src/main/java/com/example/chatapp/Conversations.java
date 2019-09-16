@@ -4,12 +4,12 @@ public class Conversations {
 
     private String UserId1;
     private String UserId2;
-    private String lastMessageId;
+    private String lastMessage;
 
-    public Conversations(String userId1, String userId2, String lastMessageId) {
+    public Conversations(String userId1, String userId2, String lastMessage) {
         UserId1 = userId1;
         UserId2 = userId2;
-        this.lastMessageId = lastMessageId;
+        this.lastMessage = lastMessage;
     }
 
     public String getUserId1() {
@@ -28,11 +28,11 @@ public class Conversations {
         UserId2 = userId2;
     }
 
-    public String getLastMessageId() {
-        return lastMessageId;
+    public String getLastMessage() {
+        return lastMessage;
     }
 
-    public void setLastMessageId(String lastMessageId) {
-        this.lastMessageId = lastMessageId;
+    public void setLastMessage(String lastMessage) {
+        this.lastMessage = lastMessage;
     }
 }
