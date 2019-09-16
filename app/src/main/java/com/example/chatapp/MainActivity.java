@@ -8,7 +8,14 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
 
+import com.facebook.AccessToken;
+import com.facebook.CallbackManager;
+import com.facebook.FacebookCallback;
+import com.facebook.FacebookException;
+import com.facebook.login.LoginResult;
+import com.facebook.login.widget.LoginButton;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
@@ -18,6 +25,7 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FacebookAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
@@ -27,7 +35,8 @@ public class MainActivity extends AppCompatActivity {
     private final int RC_SIGN_IN = 101;
     private GoogleSignInClient mGoogleSignInClient;
     private FirebaseAuth mAuth;
-
+    private LoginButton loginButton;
+    private CallbackManager mCallbackManager;
 
     private MainViewModel mainViewModel = new MainViewModel(App.getInstance());
 
@@ -37,6 +46,10 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        //facebook
+        mCallbackManager = CallbackManager.Factory.create();
+        loginButton = findViewById(R.id.login_facebook);
+        loginButton.setReadPermissions("email", "public_profile", "user_friends");
 
         googleSignIn = findViewById(R.id.login_google);
 
@@ -57,7 +70,58 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        loginButton.registerCallback(mCallbackManager, new FacebookCallback<LoginResult>() {
+            @Override
+            public void onSuccess(LoginResult loginResult) {
+                Log.d("facebookLogin", "facebook:onSuccess:" + loginResult);
+                handleFacebookAccessToken(loginResult.getAccessToken());
+            }
 
+            @Override
+            public void onCancel() {
+                Log.d("facebookLogin", "facebook:onCancel");
+
+            }
+
+            @Override
+            public void onError(FacebookException error) {
+                Log.d("facebookLogin", "facebook:onError", error);
+
+            }
+        });
+
+    }
+
+    private void handleFacebookAccessToken(AccessToken accessToken) {
+
+        Log.d("facebookLogin", "handleFacebookAccessToken:" + accessToken);
+
+        AuthCredential credential = FacebookAuthProvider.getCredential(accessToken.getToken());
+        mAuth.signInWithCredential(credential)
+                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<AuthResult> task) {
+                        if (task.isSuccessful()) {
+                            boolean isNew;
+                            // Sign in success, update UI with the signed-in user's information
+                            Log.d("facebookLogin", "signInWithCredential:success");
+                            App.setmFirebaseUser(mAuth.getCurrentUser());
+                            isNew = task.getResult().getAdditionalUserInfo().isNewUser();
+                            if(isNew){
+                                mainViewModel.addNewUser(App.getmFirebaseUser());
+                            }
+                            startActivity(new Intent(MainActivity.this,HostActivity.class));
+
+                        } else {
+                            // If sign in fails, display a message to the user.
+                            Log.w("facebookLogin", "signInWithCredential:failure", task.getException());
+                            Toast.makeText(MainActivity.this, "Authentication failed.",
+                                    Toast.LENGTH_SHORT).show();
+                        }
+
+                        // ...
+                    }
+                });
     }
 
     private void signInGoogle() {
@@ -81,6 +145,11 @@ public class MainActivity extends AppCompatActivity {
                 Log.w("TAG", "Google sign in failed", e);
                 // ...
             }
+        }
+        else
+        {
+            mCallbackManager.onActivityResult(requestCode, resultCode, data);
+
         }
     }
 
