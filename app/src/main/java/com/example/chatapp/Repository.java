@@ -33,7 +33,9 @@ public class Repository {
     private MutableLiveData<List<Message>> messages;
     private String chatRoomId;
     private String secondUserId;
-    private String myId = "23uXCKmDE2ajwE2WU6wG";
+    private String myId = "sayedalaa447@gmail.com";
+    private MutableLiveData<List<User>> users = new MutableLiveData<>();
+    private MutableLiveData<List<Conversations>> conversations = new MutableLiveData<>();
 
     private Repository() {
         db = App.getFirebaseFirestore();
@@ -74,7 +76,7 @@ public class Repository {
         return myId;
     }
 
-    public MutableLiveData<List<Message>> getMessages(String secondUserId) {
+    public MutableLiveData<List<Message>> getMessages(final String secondUserId) {
         this.secondUserId = secondUserId;
         Task task1 = db.collection("ChatRooms")
                 .whereEqualTo("UserEmail1", myId)
@@ -93,49 +95,80 @@ public class Repository {
                 for (QuerySnapshot queryDocumentSnapshots : querySnapshots) {
                     if (queryDocumentSnapshots.size() != 0) {
                         chatRoomId = queryDocumentSnapshots.getDocuments().get(0).getId();
+                        db.collection("Messages")
+                                .whereEqualTo("chatRoomId", chatRoomId)
+//                                .orderBy("timestamp", Query.Direction.ASCENDING)
+                                .get()
+                                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                                    @Override
+                                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                                        Log.i("Size", queryDocumentSnapshots.size() + "");
+                                        List<Message> data = new ArrayList<>();
+                                        for (QueryDocumentSnapshot documentSnapshot : queryDocumentSnapshots) {
+                                            Message message = documentSnapshot.toObject(Message.class);
+                                            message.setId(documentSnapshot.getId());
+                                            data.add(message);
+                                            Log.i("MessageSenderId:", message.getSenderId());
+                                        }
+                                        messages.setValue(data);
+                                        Log.i("Messages", data.toString());
+                                    }
+                                });
                     } else {
-//                        db.collection("ChatRooms")
+                        chatRoomId = "";
+                        messages.setValue(new ArrayList<Message>());
                     }
                 }
             }
         });
-        db.collection("Messages")
-                .whereEqualTo("chatRoomId", chatRoomId)
-//                .orderBy("timestamp", Query.Direction.ASCENDING)
-                .get()
-                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                    @Override
-                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-                        Log.i("Size", queryDocumentSnapshots.size() + "");
-                        List<Message> data = new ArrayList<>();
-                        for (QueryDocumentSnapshot documentSnapshot : queryDocumentSnapshots) {
-                            Message message = documentSnapshot.toObject(Message.class);
-                            message.setId(documentSnapshot.getId());
-                            data.add(message);
-                            Log.i("MessageSenderId:", message.getSenderId());
-                        }
-                        messages.setValue(data);
-                        Log.i("Messages", data.toString());
-                    }
-                });
         return messages;
     }
 
-    public void sendMessage(String body) {
-        final Message message = new Message(chatRoomId, myId, body, Timestamp.now());
-        db.collection("Messages")
-                .add(message)
-                .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
-                    @Override
-                    public void onSuccess(DocumentReference documentReference) {
-                        message.setId(documentReference.getId());
-                        List<Message> data = messages.getValue();
-                        data.add(message);
-                        messages.setValue(data);
-                    }
-                });
-    private MutableLiveData<List<User>> users = new MutableLiveData<>();
-    private MutableLiveData<List<Conversations>> conversations = new MutableLiveData<>();
+    public void sendMessage(final String body) {
+        if (chatRoomId == "") {
+            db.collection("ChatRooms")
+                    .add(new ChatRoom(myId, secondUserId, body))
+                    .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+                        @Override
+                        public void onSuccess(DocumentReference documentReference) {
+                            chatRoomId = documentReference.getId();
+                            final Message message = new Message(chatRoomId, myId, body, Timestamp.now());
+                            db.collection("Messages")
+                                    .add(message)
+                                    .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+                                        @Override
+                                        public void onSuccess(DocumentReference documentReference) {
+                                            message.setId(documentReference.getId());
+                                            List<Message> data = messages.getValue();
+                                            data.add(message);
+                                            messages.setValue(data);
+                                        }
+                                    });
+                        }
+                    });
+        } else {
+            db.collection("ChatRooms").document(chatRoomId)
+                    .update("lastMessage", body)
+                    .addOnSuccessListener(new OnSuccessListener<Void>() {
+                @Override
+                public void onSuccess(Void aVoid) {
+                    final Message message = new Message(chatRoomId, myId, body, Timestamp.now());
+                    db.collection("Messages")
+                            .add(message)
+                            .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+                                @Override
+                                public void onSuccess(DocumentReference documentReference) {
+                                    message.setId(documentReference.getId());
+                                    List<Message> data = messages.getValue();
+                                    data.add(message);
+                                    messages.setValue(data);
+                                }
+                            });
+                }
+            });
+        }
+    }
+
 
     public LiveData<List<User>> getUsers() {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
@@ -149,9 +182,9 @@ public class Repository {
                             for (QueryDocumentSnapshot document : task.getResult()) {
                                 Log.d("TAG", document.getId() + " => " + document.getData().get("email"));
 
-                                if (!document.getData().get("email").equals( App.getmFirebaseUser().getEmail())) {
+                                if (!document.getData().get("email").equals(App.getmFirebaseUser().getEmail())) {
 
-                                    Log.d("asdd",document.getData().get("email") +"   "+ App.getmFirebaseUser().getEmail());
+                                    Log.d("asdd", document.getData().get("email") + "   " + App.getmFirebaseUser().getEmail());
 
                                     list.add(new User(document.getId(), document.getData().get("name") + "",
                                             document.getData().get("url_photo") + "", document.getData().get("email") + ""));
@@ -180,9 +213,9 @@ public class Repository {
                                 Log.d("2 email1", document.getId() + " => " + document.getData().get("UserEmail1"));
                                 Log.d("2 email2", document.getId() + " => " + document.getData().get("UserEmail2"));
 
-                                list.add(new Conversations(document.getData().get("UserEmail1")+"",
-                                        document.getData().get("UserEmail2")+"",
-                                        document.getData().get("lastMessageId")+""
+                                list.add(new Conversations(document.getData().get("UserEmail1") + "",
+                                        document.getData().get("UserEmail2") + "",
+                                        document.getData().get("lastMessageId") + ""
                                 ));
                             }
                             //conversations.postValue(list);
@@ -204,9 +237,9 @@ public class Repository {
                                 Log.d("1 email1", document.getId() + " => " + document.getData().get("UserEmail1"));
                                 Log.d("1 email2", document.getId() + " => " + document.getData().get("UserEmail2"));
 
-                                list.add(new Conversations(document.getData().get("UserEmail1")+"",
-                                        document.getData().get("UserEmail2")+"",
-                                        document.getData().get("lastMessageId")+""
+                                list.add(new Conversations(document.getData().get("UserEmail1") + "",
+                                        document.getData().get("UserEmail2") + "",
+                                        document.getData().get("lastMessageId") + ""
                                 ));
                             }
                             conversations.postValue(list);

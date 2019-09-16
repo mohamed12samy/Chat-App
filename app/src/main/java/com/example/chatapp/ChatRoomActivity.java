@@ -18,7 +18,7 @@ public class ChatRoomActivity extends AppCompatActivity {
     private MessageAdapter adapter;
     private ChatRoomViewModel viewModel;
     private EditText messageEditText;
-    private String secondUserId = "xHtxN9Qf6cuD0QF1dYOw";
+    private String secondUserId = "ms2519299@gmail.com";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
