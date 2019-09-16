@@ -2,12 +2,18 @@ package com.example.chatapp;
 
 
 import android.content.Context;
+import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.drawable.GlideDrawable;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.target.Target;
 
 import java.util.List;
 
@@ -16,10 +22,10 @@ import de.hdodenhof.circleimageview.CircleImageView;
 public class ConversationsAdapter extends RecyclerView.Adapter<ConversationsAdapter.ViewHolder> {
 
 
-    private List<Conversations> conversations;
+    private List<Pair<User , String>> conversations;
     private Context context;
 
-    public ConversationsAdapter(Context context, List<Conversations> conversations) {
+    public ConversationsAdapter(Context context, List<Pair<User , String>> conversations) {
 
         this.conversations = conversations;
         this.context = context;
@@ -36,14 +42,28 @@ public class ConversationsAdapter extends RecyclerView.Adapter<ConversationsAdap
     }
 
     @Override
-    public void onBindViewHolder(@androidx.annotation.NonNull ViewHolder holder, int position) {
-        Conversations conversation = conversations.get(position);
+    public void onBindViewHolder(@androidx.annotation.NonNull final ViewHolder holder, int position) {
 
-        //holder.userName.setText(/*user name chatting with*/);
 
-        /*Glide.with(holder.userImage.getContext())
-                .load(user.getUrlPhoto()).into(holder.userImage);
-*/
+        holder.userName.setText(conversations.get(position).first.getName());
+
+        Glide.with(holder.userImage.getContext())
+                .load(conversations.get(position).first.getUrlPhoto())
+                .listener(new RequestListener<String, GlideDrawable>() {
+                    @Override
+                    public boolean onException(Exception e, String model, Target<GlideDrawable> target, boolean isFirstResource) {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean onResourceReady(GlideDrawable resource, String model, Target<GlideDrawable> target, boolean isFromMemoryCache, boolean isFirstResource) {
+                        holder.userImage.setImageDrawable(resource);
+                        return false;
+                    }
+                })
+                .into(holder.userImage);
+
+        holder.lastMessage.setText(conversations.get(position).second);
     }
 
 
