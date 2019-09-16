@@ -101,6 +101,7 @@ public class MainActivity extends AppCompatActivity {
                             if(isNew){
                                 mainViewModel.addNewUser(App.getmFirebaseUser());
                             }
+                            startActivity(new Intent(MainActivity.this,HostActivity.class));
                             //Log.d("RRR",user.getDisplayName()+"   "+user.getEmail()+"  "+user.getPhotoUrl());
                             //updateUI(user);
                         } else {
