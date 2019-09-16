@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="horizontal"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layoutDirection="rtl"
+    android:padding="5dp">
+
+        <RelativeLayout
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="5dp"
+            >
+                <TextView
+                    android:id="@+id/messageTextView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/outgoing_speech_bubble"
+                    android:lineSpacingExtra="2dp"
+                    android:paddingRight="20dp"
+                    android:paddingTop="4dp"
+                    android:paddingLeft="10dp"
+                    android:paddingBottom="10dp"
+                    android:textColor="#000000"
+                    android:textSize="14sp"
+                    android:text="Hi"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="parent"
+                    app:layout_constraintWidth_max="wrap"
+                    app:layout_constraintWidth_percent="0.8" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/colorPrimary"
+                    android:id="@+id/timestampTextView"
+                    android:layout_below="@id/messageTextView"
+                    android:textSize="10sp"
+                    />
+        </RelativeLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>
