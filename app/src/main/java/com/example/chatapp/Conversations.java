@@ -6,10 +6,10 @@ public class Conversations {
     private String UserId2;
     private String lastMessage;
 
-    public Conversations(String userId1, String userId2, String lastMessageId) {
+    public Conversations(String userId1, String userId2, String lastMessage) {
         UserId1 = userId1;
         UserId2 = userId2;
-        this.lastMessage = lastMessageId;
+        this.lastMessage = lastMessage;
     }
 
     public String getUserId1() {
@@ -32,7 +32,7 @@ public class Conversations {
         return lastMessage;
     }
 
-    public void setLastMessage(String lastMessageId) {
-        this.lastMessage = lastMessageId;
+    public void setLastMessage(String lastMessage) {
+        this.lastMessage = lastMessage;
     }
 }

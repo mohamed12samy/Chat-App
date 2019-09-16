@@ -1,6 +1,7 @@
 package com.example.chatapp;
 
 import android.util.Log;
+import android.util.Pair;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -11,7 +12,6 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
-
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.Timestamp;
 
@@ -169,7 +169,6 @@ public class Repository {
         }
     }
 
-
     public LiveData<List<User>> getUsers() {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("Users")
@@ -199,55 +198,58 @@ public class Repository {
         return users;
     }
 
-    public LiveData<List<Conversations>> getConversations() {
+    public LiveData<List<Pair<User, String>>> getConversations() {
 
-        db.collection("ChatRooms")
+        Task task1 = db.collection("ChatRooms")
                 .whereEqualTo("UserEmail2", App.getmFirebaseUser().getEmail())
-                .get()
-                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                    @Override
-                    public void onComplete(@androidx.annotation.NonNull Task<QuerySnapshot> task) {
-                        if (task.isSuccessful()) {
-                            List<Conversations> list = new ArrayList<>();
-                            for (QueryDocumentSnapshot document : task.getResult()) {
-                                Log.d("2 email1", document.getId() + " => " + document.getData().get("UserEmail1"));
-                                Log.d("2 email2", document.getId() + " => " + document.getData().get("UserEmail2"));
+                .get();
 
-                                list.add(new Conversations(document.getData().get("UserEmail1") + "",
-                                        document.getData().get("UserEmail2") + "",
-                                        document.getData().get("lastMessageId") + ""
-                                ));
-                            }
-                            //conversations.postValue(list);
-                        } else {
-                            Log.w("TAG", "Error getting documents.", task.getException());
-                        }
-                    }
-                });
-
-        db.collection("ChatRooms")
+        Task task2 = db.collection("ChatRooms")
                 .whereEqualTo("UserEmail1", App.getmFirebaseUser().getEmail())
-                .get()
-                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                    @Override
-                    public void onComplete(@androidx.annotation.NonNull Task<QuerySnapshot> task) {
-                        if (task.isSuccessful()) {
-                            List<Conversations> list = new ArrayList<>();
-                            for (QueryDocumentSnapshot document : task.getResult()) {
-                                Log.d("1 email1", document.getId() + " => " + document.getData().get("UserEmail1"));
-                                Log.d("1 email2", document.getId() + " => " + document.getData().get("UserEmail2"));
+                .get();
 
-                                list.add(new Conversations(document.getData().get("UserEmail1") + "",
-                                        document.getData().get("UserEmail2") + "",
-                                        document.getData().get("lastMessageId") + ""
-                                ));
+        Task<List<QuerySnapshot>> task3 = Tasks.whenAllSuccess(task1, task2);
+        task3.addOnSuccessListener(new OnSuccessListener<List<QuerySnapshot>>() {
+            List<Pair<User, String>> list1 = new ArrayList<>();
+
+            @Override
+            public void onSuccess(List<QuerySnapshot> querySnapshots) {
+                // List<Conversations> list = new ArrayList<>();
+
+                for (QuerySnapshot queryDocumentSnapshots : querySnapshots) {
+                    for (final QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                        Log.d("email1", document.getId() + " => " + document.getData().get("UserEmail1"));
+                        Log.d("email2", document.getId() + " => " + document.getData().get("UserEmail2"));
+
+                        String email = App.getmFirebaseUser().getEmail().equals(document.getData().get("UserEmail1")) ?
+                                document.getData().get("UserEmail2") + "" :
+                                document.getData().get("UserEmail1") + "";
+
+                        db.collection("Users")
+                                .whereEqualTo("email", email)
+                                .get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                            @Override
+                            public void onComplete(@NonNull Task<QuerySnapshot> task) {
+
+                                for (QueryDocumentSnapshot document1 : task.getResult()) {
+                                    Log.d("popo","ooooooooo  "+document1.getId()+"    "+document1.getData().get("name")
+                                    +"   "+document.getData().get("lastMessage"));
+                                    User user = new User(document1.getId(), document1.getData().get("name") + "",
+                                            document1.getData().get("url_photo") + "", document1.getData().get("email") + "");
+                                    list1.add(new Pair<>(user, document.getData().get("lastMessage") + ""));
+                                    Log.d("rtrt",list1.size()+"");
+                                    conversations.postValue(list1);
+                                }
                             }
-                            conversations.postValue(list);
-                        } else {
-                            Log.w("TAG", "Error getting documents.", task.getException());
-                        }
+                        });
                     }
-                });
+                }
+
+
+
+            }
+        });
+
 
         return conversations;
     }
