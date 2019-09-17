@@ -23,11 +23,12 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.ViewHolder> 
 
     private List<User> users;
     private Context context;
+    private Clicklistener clicklistener;
 
-    public UsersAdapter(Context context, List<User> users) {
-
+    public UsersAdapter(Context context, List<User> users, Clicklistener clicklistener) {
         this.users = users;
         this.context = context;
+        this.clicklistener = clicklistener;
     }
 
 
@@ -82,6 +83,13 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.ViewHolder> 
             super(itemView);
             userImage = itemView.findViewById(R.id.user_image);
             userName = itemView.findViewById(R.id.user_name);
+
+            itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    clicklistener.onItemClicked(getAdapterPosition());
+                }
+            });
         }
     }
 

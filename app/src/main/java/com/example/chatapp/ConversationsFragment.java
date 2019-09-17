@@ -1,5 +1,6 @@
 package com.example.chatapp;
 
+import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.fragment.app.Fragment;
@@ -8,6 +9,7 @@ import androidx.lifecycle.ViewModelProviders;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.util.Log;
 import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -18,10 +20,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class ConversationsFragment extends Fragment {
+public class ConversationsFragment extends Fragment implements Clicklistener{
     List<Pair<User , String>> conversationss = new ArrayList<>();
     RecyclerView recyclerView;
-    ConversationsAdapter conversationsAdapter = new ConversationsAdapter(getActivity(), conversationss);
+    ConversationsAdapter conversationsAdapter = new ConversationsAdapter(getActivity(), conversationss, this);
 
     ConversationsViewModel mConversationsViewModel = new ConversationsViewModel(App.getInstance());
 
@@ -47,5 +49,17 @@ public class ConversationsFragment extends Fragment {
         });
         return view;
     }
+    @Override
+    public void onItemClicked(int position) {
+        if (conversationss != null) {
+            Log.d("TAAGG",position + "   "+conversationss.get(position).first.getId()+
+                    "  "+conversationss.get(position).first.getName()+"  "+conversationss.get(position).first.getUrlPhoto());
 
+            Intent intent = new Intent(getActivity(), ChatRoomActivity.class);
+            intent.putExtra("user_email",conversationss.get(position).first.getEmail());
+            intent.putExtra("user_name",conversationss.get(position).first.getName());
+            intent.putExtra("user_url_photo",conversationss.get(position).first.getUrlPhoto());
+            startActivity(intent);
+        }
+    }
 }

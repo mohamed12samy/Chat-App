@@ -19,11 +19,13 @@
         android:id="@+id/login_google"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-
+        android:background="@drawable/google_button_background"
         android:text="Login With Google"
         android:textAllCaps="false"
         android:layout_centerHorizontal="true"
         android:layout_centerVertical="true"
+        android:drawableLeft="@drawable/ic_google_logo"
+        android:paddingLeft="40dp"
         />
     <com.facebook.login.widget.LoginButton
         android:id="@+id/login_facebook"
@@ -31,5 +33,6 @@
         android:layout_height="wrap_content"
         android:layout_below="@id/login_google"
         android:layout_marginTop="30dp"
-        android:layout_centerHorizontal="true"/>
+        android:layout_centerHorizontal="true"
+        />
 </RelativeLayout>

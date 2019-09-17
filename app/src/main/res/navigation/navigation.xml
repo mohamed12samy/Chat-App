@@ -9,7 +9,11 @@
         android:id="@+id/conversations"
         android:name="com.example.chatapp.ConversationsFragment"
         android:label="fragment_conversations"
-        tools:layout="@layout/fragment_conversations" />
+        tools:layout="@layout/fragment_conversations" >
+        <action
+            android:id="@+id/action_conversations_to_users"
+            app:destination="@id/users" />
+    </fragment>
     <fragment
         android:id="@+id/users"
         android:name="com.example.chatapp.UsersFragment"

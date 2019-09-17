@@ -8,10 +8,11 @@
     android:background="@drawable/chatroom_background"
     >
 
-    <!--<include-->
-        <!--layout="@layout/app_bar"-->
-        <!--android:id="@+id/app_bar">-->
-    <!--</include>-->
+    <include layout="@layout/app_bar"
+        android:id="@+id/app_bar"
+        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        />
 
     <androidx.recyclerview.widget.RecyclerView
         android:layout_width="match_parent"

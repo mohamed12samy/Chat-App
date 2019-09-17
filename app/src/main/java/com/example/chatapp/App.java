@@ -1,6 +1,9 @@
 package com.example.chatapp;
 
 import android.app.Application;
+import android.content.Context;
+
+import androidx.multidex.MultiDex;
 
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -14,6 +17,12 @@ public class App extends Application {
     public final static String NAME = "name";
     public final static String EMAIL = "email";
     public final static String URL_PHOTO = "url_photo";
+
+    @Override
+    protected void attachBaseContext(Context base) {
+        super.attachBaseContext(base);
+        MultiDex.install(this);
+    }
 
     @Override
     public void onCreate() {

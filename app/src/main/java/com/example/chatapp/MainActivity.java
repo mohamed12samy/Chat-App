@@ -3,11 +3,14 @@ package com.example.chatapp;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.facebook.AccessToken;
@@ -38,15 +41,25 @@ public class MainActivity extends AppCompatActivity {
     private LoginButton loginButton;
     private CallbackManager mCallbackManager;
 
+    private ProgressBar progressBar;
     private MainViewModel mainViewModel = new MainViewModel(App.getInstance());
 
+    SharedPreferences sharedPreferences;
     Button googleSignIn;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        /*sharedPreferences = getSharedPreferences("login", Context.MODE_PRIVATE);
+        if(sharedPreferences.contains("is_logged") && sharedPreferences.getBoolean("is_logged",false)){
+            startActivity(new Intent(MainActivity.this,HostActivity.class));
+            finish();
+        }*/
+
         //facebook
+        progressBar = findViewById(R.id.progress_bar);
         mCallbackManager = CallbackManager.Factory.create();
         loginButton = findViewById(R.id.login_facebook);
         loginButton.setReadPermissions("email", "public_profile", "user_friends");
@@ -66,6 +79,7 @@ public class MainActivity extends AppCompatActivity {
         googleSignIn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                progressBar.setVisibility(View.VISIBLE);
                 signInGoogle();
             }
         });
@@ -79,12 +93,15 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onCancel() {
+                progressBar.setVisibility(View.INVISIBLE);
+
                 Log.d("facebookLogin", "facebook:onCancel");
 
             }
 
             @Override
             public void onError(FacebookException error) {
+                progressBar.setVisibility(View.INVISIBLE);
                 Log.d("facebookLogin", "facebook:onError", error);
 
             }
@@ -93,7 +110,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void handleFacebookAccessToken(AccessToken accessToken) {
-
+        progressBar.setVisibility(View.INVISIBLE);
         Log.d("facebookLogin", "handleFacebookAccessToken:" + accessToken);
 
         AuthCredential credential = FacebookAuthProvider.getCredential(accessToken.getToken());
@@ -110,7 +127,11 @@ public class MainActivity extends AppCompatActivity {
                             if(isNew){
                                 mainViewModel.addNewUser(App.getmFirebaseUser());
                             }
+                            /*SharedPreferences.Editor editor = sharedPreferences.edit();
+                            editor.putBoolean("is_logged", true).apply();
+                            editor.commit();*/
                             startActivity(new Intent(MainActivity.this,HostActivity.class));
+                            finish();
 
                         } else {
                             // If sign in fails, display a message to the user.
@@ -156,6 +177,8 @@ public class MainActivity extends AppCompatActivity {
     private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
         Log.d("TAG", "firebaseAuthWithGoogle:" + acct.getId());
 
+        progressBar.setVisibility(View.INVISIBLE);
+
         AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
         mAuth.signInWithCredential(credential)
                 .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
@@ -170,7 +193,11 @@ public class MainActivity extends AppCompatActivity {
                             if(isNew){
                                 mainViewModel.addNewUser(App.getmFirebaseUser());
                             }
+                           /* SharedPreferences.Editor editor = sharedPreferences.edit();
+                            editor.putBoolean("is_logged", true).apply();
+                            editor.commit();*/
                             startActivity(new Intent(MainActivity.this,HostActivity.class));
+                            finish();
                             //Log.d("RRR",user.getDisplayName()+"   "+user.getEmail()+"  "+user.getPhotoUrl());
                             //updateUI(user);
                         } else {
@@ -190,6 +217,12 @@ public class MainActivity extends AppCompatActivity {
         super.onStart();
         // Check if user is signed in (non-null) and update UI accordingly.
         FirebaseUser currentUser = mAuth.getCurrentUser();
+        if (currentUser != null)
+        {
+            App.setmFirebaseUser(currentUser);
+            startActivity(new Intent(MainActivity.this,HostActivity.class));
+            finish();
+        }
 //        updateUI(currentUser);
     }
 

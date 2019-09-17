@@ -5,15 +5,13 @@ import com.google.firebase.firestore.Exclude;
 
 public class Message {
     private String id;
-    private String chatRoomId;
     private String senderId;
     private String body;
     private Timestamp timestamp;
 
     public Message() {}
 
-    public Message(String chatId, String senderId, String body, Timestamp timestamp) {
-        this.chatRoomId = chatId;
+    public Message(String senderId, String body, Timestamp timestamp) {
         this.senderId = senderId;
         this.body = body;
         this.timestamp = timestamp;
@@ -26,14 +24,6 @@ public class Message {
 
     public void setId(String id) {
         this.id = id;
-    }
-
-    public String getChatRoomId() {
-        return chatRoomId;
-    }
-
-    public void setChatRoomId(String chatRoomId) {
-        this.chatRoomId = chatRoomId;
     }
 
     public String getSenderId() {

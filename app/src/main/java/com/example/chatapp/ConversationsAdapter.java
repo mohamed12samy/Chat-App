@@ -24,11 +24,12 @@ public class ConversationsAdapter extends RecyclerView.Adapter<ConversationsAdap
 
     private List<Pair<User , String>> conversations;
     private Context context;
+    private Clicklistener clicklistener;
 
-    public ConversationsAdapter(Context context, List<Pair<User , String>> conversations) {
-
+    public ConversationsAdapter(Context context, List<Pair<User , String>> conversations,Clicklistener clicklistener) {
         this.conversations = conversations;
         this.context = context;
+        this.clicklistener = clicklistener;
     }
 
 
@@ -85,6 +86,14 @@ public class ConversationsAdapter extends RecyclerView.Adapter<ConversationsAdap
             userImage = itemView.findViewById(R.id.user_image);
             userName = itemView.findViewById(R.id.user_name);
             lastMessage = itemView.findViewById(R.id.last_message);
+
+            itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    clicklistener.onItemClicked(getAdapterPosition());
+                }
+            });
+
         }
     }
 

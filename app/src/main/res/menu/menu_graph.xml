@@ -4,12 +4,14 @@
 
     <item
         android:id="@+id/users"
-        android:title="Home"
+        android:title=""
+        android:icon="@drawable/ic_people_black_24dp"
         app:showAsAction="ifRoom"
         />
     <item
         android:id="@+id/conversations"
-        android:title="Chat"
+        android:title=""
+        android:icon="@drawable/message"
         app:showAsAction="ifRoom"
         />
 </menu>

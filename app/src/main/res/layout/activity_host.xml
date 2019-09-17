@@ -6,72 +6,39 @@
     android:layout_height="match_parent"
     tools:context=".HostActivity">
 
-    <com.google.android.material.appbar.MaterialToolbar
+    <include layout="@layout/app_bar"
+        android:id="@+id/app_bar"
+        android:layout_height="wrap_content"
         android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:id="@+id/my_toolbar"
-        android:elevation="4dp"
-        android:background="#FFFFFF"
-        app:contentInsetLeft="0dp"
-        app:contentInsetStart="0dp"
-        app:contentInsetStartWithNavigation="0dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        android:padding="4dp"
-        >
-        <de.hdodenhof.circleimageview.CircleImageView
-            android:id="@+id/user_image"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_marginStart="24dp"
-            android:src="@drawable/user"
-            android:layout_marginLeft="24dp" />
+        />
 
-        <TextView
-            android:layout_width="250dp"
-            android:layout_height="wrap_content"
-            android:text="Current UserName"
-            android:layout_gravity="center"
-            android:id="@+id/toolbar_title"
-            android:textSize="20sp"
-            android:textColor="#000"
-            android:textStyle="bold"
-            android:gravity="left"
-            />
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="?attr/actionBarSize"
-            android:dividerPadding="8dp"
-            android:orientation="horizontal"
-            android:showDividers="end">
-
-
-        </LinearLayout>
-
-    </com.google.android.material.appbar.MaterialToolbar>
-
-    <fragment
+    <FrameLayout
         android:id="@+id/nav_host_fragment"
-        android:name="androidx.navigation.fragment.NavHostFragment"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:defaultNavHost="true"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/my_toolbar"
-        app:navGraph="@navigation/navigation" />
+        app:layout_constraintTop_toBottomOf="@id/app_bar"
+         />
 
-    <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/bottom_nav"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:layout_alignParentBottom="true"
-        android:background="@color/cardview_light_background"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:menu="@menu/menu_graph" />
+        android:layout_marginBottom="4dp"
+        >
+        <com.google.android.material.bottomnavigation.BottomNavigationView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/bottom_nav_view"
+            app:menu="@menu/menu_graph"
+            android:background="#fff">
+
+        </com.google.android.material.bottomnavigation.BottomNavigationView>
+
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
