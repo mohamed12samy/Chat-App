@@ -7,12 +7,18 @@ import androidx.multidex.MultiDex;
 
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 
 public class App extends Application {
     private static App myApp;
 
     private static FirebaseFirestore mFirebaseFirestore;
     private static FirebaseUser mFirebaseUser;
+    private static FirebaseStorage storage;
+    private static StorageReference photoReference ;
+
+
 
     public final static String NAME = "name";
     public final static String EMAIL = "email";
@@ -29,6 +35,8 @@ public class App extends Application {
         super.onCreate();
         myApp = this;
         mFirebaseFirestore = FirebaseFirestore.getInstance();
+        storage = FirebaseStorage.getInstance();
+        photoReference = storage.getReference().child("images");
     }
 
     public static App getInstance() {
@@ -44,5 +52,9 @@ public class App extends Application {
 
     public static void setmFirebaseUser(FirebaseUser mFirebaseUser) {
         App.mFirebaseUser = mFirebaseUser;
+    }
+
+    public static StorageReference getPhotoReference() {
+        return photoReference;
     }
 }

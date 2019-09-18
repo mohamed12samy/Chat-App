@@ -1,24 +1,40 @@
 package com.example.chatapp;
 
+import android.Manifest;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import androidx.lifecycle.Observer;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -29,7 +45,11 @@ import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 
-public class ChatRoomActivity extends AppCompatActivity implements Clicklistener{
+public class ChatRoomActivity extends AppCompatActivity implements Clicklistener {
+
+    private static final int PICK_IMAGE_CAMERA = 101;
+    private static final int PICK_IMAGE_GALLERY = 102;
+    private static final int REQUEST_CODE = 1;
 
     private RecyclerView recyclerView;
     private MessageAdapter adapter;
@@ -44,11 +64,13 @@ public class ChatRoomActivity extends AppCompatActivity implements Clicklistener
     private BottomSheetBehavior mBottomSheetBehavior;
     View bottomSheet;
     ImageView userImage;
+    ImageView imageToSend;
     TextView userName;
     Button deleteMessage;
     Button copyMessage;
     Button forwardMessage;
-    private DrawableClickListener clickListener;
+    ImageButton pickImage;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,6 +83,7 @@ public class ChatRoomActivity extends AppCompatActivity implements Clicklistener
 
         userName = findViewById(R.id.toolbar_title);
         userImage = findViewById(R.id.user_image);
+        imageToSend = findViewById(R.id.image_to_send);
 
         bottomSheet = findViewById(R.id.design_bottom_sheet);
         mBottomSheetBehavior = BottomSheetBehavior.from(bottomSheet);
@@ -69,6 +92,7 @@ public class ChatRoomActivity extends AppCompatActivity implements Clicklistener
         deleteMessage = findViewById(R.id.delete);
         copyMessage = findViewById(R.id.copy);
         forwardMessage = findViewById(R.id.forward);
+        pickImage = findViewById(R.id.get_image);
 
         findViewById(R.id.sign_out).setVisibility(View.INVISIBLE);
         userName.setText(secondUserName);
@@ -91,7 +115,7 @@ public class ChatRoomActivity extends AppCompatActivity implements Clicklistener
         recyclerView = findViewById(R.id.recyclerView);
         LinearLayoutManager manager = new LinearLayoutManager(this);
         recyclerView.setLayoutManager(manager);
-        viewModel = new ChatRoomViewModel(getApplication(),secondUserEmail);
+        viewModel = new ChatRoomViewModel(getApplication(), secondUserEmail);
         viewModel.getMessages().observe(this, new Observer<List<Message>>() {
             @Override
             public void onChanged(List<Message> mMessages) {
@@ -102,12 +126,30 @@ public class ChatRoomActivity extends AppCompatActivity implements Clicklistener
                 recyclerView.scrollToPosition(mMessages.size() - 1);
             }
         });
-        adapter = new MessageAdapter(viewModel.getMyId(), viewModel.getMessages().getValue(),this);
+        adapter = new MessageAdapter(viewModel.getMyId(), viewModel.getMessages().getValue(), this);
         recyclerView.setAdapter(adapter);
         messageEditText = findViewById(R.id.messageEditText);
 
 //        messageEditText.setDrawableC
 
+        pickImage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+               /* if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+
+                        ActivityCompat.requestPermissions(ChatRoomActivity.this, new String[]
+                                {Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_CODE);
+
+                        return;
+                    }
+                }*/
+                /*Intent pickPhoto = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                startActivityForResult(pickPhoto, PICK_IMAGE_GALLERY);*/
+
+                selectImage();
+            }
+        });
 
     }
 
@@ -126,7 +168,7 @@ public class ChatRoomActivity extends AppCompatActivity implements Clicklistener
         viewModel.onChatClose();
     }
 
-    private void buttonClick(final int position){
+    private void buttonClick(final int position) {
         deleteMessage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -149,40 +191,173 @@ public class ChatRoomActivity extends AppCompatActivity implements Clicklistener
         forwardMessage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                ForwardMessageDialog forwadDialog=new ForwardMessageDialog(ChatRoomActivity.this,
-                        ChatRoomActivity.this,secondUserEmail,
-                        messages.get(position).getBody());
-                Log.d("USUS",secondUserEmail);
+                ForwardMessageDialog forwadDialog = new ForwardMessageDialog(ChatRoomActivity.this,
+                        ChatRoomActivity.this, secondUserEmail,
+                        messages.get(position).getBody(), messages.get(position).getPhoto_url());
+                Log.d("USUS", secondUserEmail);
                 forwadDialog.show();
                 mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
             }
         });
     }
+
     @Override
     public void onItemClicked(int position) {
         Message message = messages.get(position);
-        if(!message.getSenderId().equals(App.getmFirebaseUser().getEmail())){
+        if (!message.getSenderId().equals(App.getmFirebaseUser().getEmail())) {
             deleteMessage.setVisibility(View.GONE);
-         }else deleteMessage.setVisibility(View.VISIBLE);
+        } else deleteMessage.setVisibility(View.VISIBLE);
+        if (message.getBody() == null) {
+            copyMessage.setVisibility(View.GONE);
+        } else copyMessage.setVisibility(View.VISIBLE);
 
         mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
         buttonClick(position);
     }
 
     @Override
-    public boolean dispatchTouchEvent(MotionEvent event){
+    public boolean dispatchTouchEvent(MotionEvent event) {
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
-            if (mBottomSheetBehavior.getState()==BottomSheetBehavior.STATE_EXPANDED) {
+            if (mBottomSheetBehavior.getState() == BottomSheetBehavior.STATE_EXPANDED) {
 
                 Rect outRect = new Rect();
                 bottomSheet.getGlobalVisibleRect(outRect);
 
-                if(!outRect.contains((int)event.getRawX(), (int)event.getRawY())){
+                if (!outRect.contains((int) event.getRawX(), (int) event.getRawY())) {
                     mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
                 }
             }
         }
 
         return super.dispatchTouchEvent(event);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == PICK_IMAGE_CAMERA) {
+            Bitmap photo = (Bitmap) data.getExtras().get("data");
+            Uri tempUri = getImageUri(getApplicationContext(), photo);
+
+            photoViewing(tempUri, photo);
+        }
+        else if (requestCode == PICK_IMAGE_GALLERY && resultCode == RESULT_OK) {
+            final Uri selectedImage = data.getData();
+            try {
+                Bitmap bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), selectedImage);
+                ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 50, bytes);
+                Log.e("Activity", "Pick from Gallery::>>> ");
+
+
+                String imgPath = getRealPathFromURI(selectedImage);
+
+                photoViewing(selectedImage, bitmap);
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    public Uri getImageUri(Context inContext, Bitmap inImage) {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        inImage.compress(Bitmap.CompressFormat.JPEG, 100, bytes);
+        String path = MediaStore.Images.Media.insertImage(inContext.getContentResolver(), inImage, "Title", null);
+        return Uri.parse(path);
+    }
+    private void photoViewing(final Uri selectedImage, Bitmap bitmap) {
+        mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+        imageToSend.setImageBitmap(bitmap);
+        findViewById(R.id.photo_layout).setVisibility(View.VISIBLE);
+        findViewById(R.id.buttons_layout).setVisibility(View.GONE);
+        findViewById(R.id.send_photo).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                viewModel.addImageToStorage(selectedImage);
+                mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
+                imageToSend.setImageBitmap(null);
+                findViewById(R.id.photo_layout).setVisibility(View.GONE);
+                findViewById(R.id.buttons_layout).setVisibility(View.VISIBLE);
+            }
+        });
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        Log.d("sdsd","++++++++++++++++");
+
+        if (requestCode == REQUEST_CODE) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "camera permission granted", Toast.LENGTH_LONG).show();
+
+            }
+        } else if (requestCode == 100) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "camera permission granted", Toast.LENGTH_LONG).show();
+                Intent cameraIntent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+                startActivityForResult(cameraIntent, PICK_IMAGE_CAMERA);
+            } else {
+                Toast.makeText(this, "camera permission denied", Toast.LENGTH_LONG).show();
+            }
+        }
+    }
+
+    private void selectImage() {
+
+        try {
+            PackageManager pm = getPackageManager();
+            int hasPerm = pm.checkPermission(Manifest.permission.CAMERA, getPackageName());
+            if (true) {
+                final CharSequence[] options = {"Take Photo", "Choose From Gallery", "Cancel"};
+                AlertDialog.Builder builder = new AlertDialog.Builder(ChatRoomActivity.this);
+                builder.setTitle("Select Option");
+                builder.setItems(options, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int item) {
+                        if (options[item].equals("Take Photo")) {
+                            Log.d("sdsd","*8888881");
+
+                            dialog.dismiss();
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                                if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                                    Log.d("sdsd","*1111111");
+
+                                    requestPermissions(new String[]{Manifest.permission.CAMERA}, 100);
+                                } else {
+                                    Log.d("sdsd","********");
+                                    Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                                    startActivityForResult(cameraIntent, PICK_IMAGE_CAMERA);
+                                }
+                            }else {
+                                Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                                startActivityForResult(cameraIntent, PICK_IMAGE_CAMERA);
+                            }
+
+                        } else if (options[item].equals("Choose From Gallery")) {
+                            dialog.dismiss();
+                            Intent pickPhoto = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                            startActivityForResult(pickPhoto, PICK_IMAGE_GALLERY);
+                        } else if (options[item].equals("Cancel")) {
+                            dialog.dismiss();
+                        }
+                    }
+                });
+                builder.create();
+                builder.show();
+            } else
+                Toast.makeText(this, "Camera Permission error", Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Toast.makeText(this, "Camera Permission error", Toast.LENGTH_SHORT).show();
+            e.printStackTrace();
+        }
+    }
+
+    public String getRealPathFromURI(Uri contentUri) {
+        String[] proj = {MediaStore.Audio.Media.DATA};
+        Cursor cursor = managedQuery(contentUri, proj, null, null, null);
+        int column_index = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA);
+        cursor.moveToFirst();
+        return cursor.getString(column_index);
     }
 }

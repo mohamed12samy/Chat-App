@@ -15,6 +15,10 @@
             android:orientation="vertical"
             android:padding="5dp"
             >
+        <RelativeLayout
+            android:id="@+id/message_layout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
                 <TextView
                     android:id="@+id/messageTextView"
                     android:layout_width="wrap_content"
@@ -29,30 +33,26 @@
                     android:textSize="14sp"
                     android:text="Hi"
                      />
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="@color/colorPrimary"
-                    android:id="@+id/timestampTextView"
-                    android:layout_below="@id/messageTextView"
-                    android:textSize="10sp"
-                    />
-
                 <ImageView
+                    android:visibility="gone"
                     android:id="@+id/photo"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@drawable/outgoing_speech_bubble"
                     android:lineSpacingExtra="2dp"
-                    android:paddingRight="16dp"
-                    android:paddingTop="4dp"
+                    android:paddingRight="20dp"
+                    android:paddingTop="1dp"
                     android:paddingLeft="8dp"
-                    android:paddingBottom="10dp"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="parent"
-                    app:layout_constraintWidth_max="wrap"
-                    app:layout_constraintWidth_percent="0.8"
-                    android:src="@drawable/forward"
+                    android:paddingBottom="1dp"
+                    />
+        </RelativeLayout>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/colorPrimary"
+                    android:id="@+id/timestampTextView"
+                    android:layout_below="@id/message_layout"
+                    android:textSize="10sp"
                     />
         </RelativeLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

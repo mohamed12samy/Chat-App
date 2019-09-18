@@ -1,6 +1,7 @@
 package com.example.chatapp;
 
 import android.app.Application;
+import android.net.Uri;
 
 import java.util.List;
 
@@ -22,7 +23,7 @@ public class ChatRoomViewModel extends AndroidViewModel {
     }
 
     public void sendMessage(String body) {
-        repository.sendMessage(body);
+        repository.sendMessage(body, null);
     }
 
     public String getMyId() {
@@ -35,6 +36,12 @@ public class ChatRoomViewModel extends AndroidViewModel {
 
     public void removeMessage(Message message){
         repository.removeMessage(message.getId());
+    }
+
+
+    public void addImageToStorage(Uri imageUri)
+    {
+        repository.storeImageToStorage(imageUri);
     }
     public void onChatClose() {
         repository.onChatClose();

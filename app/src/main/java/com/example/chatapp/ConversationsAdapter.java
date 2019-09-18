@@ -64,9 +64,11 @@ public class ConversationsAdapter extends RecyclerView.Adapter<ConversationsAdap
                 })
                 .into(holder.userImage);
         Message message = conversations.get(position).second;
+        String m = message.getBody() == null ? "photo": message.getBody();
         if (message.getSenderId().equals(App.getmFirebaseUser().getEmail()))
-            holder.lastMessage.setText("You: "+message.getBody());
-        else holder.lastMessage.setText(message.getBody());
+            holder.lastMessage.setText("You: "+m);
+
+        else holder.lastMessage.setText(m);
     }
 
 

@@ -1,5 +1,7 @@
 package com.example.chatapp;
 
+import android.net.Uri;
+
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.Exclude;
 
@@ -12,17 +14,11 @@ public class Message {
 
     public Message() {}
 
-    public Message(String senderId, String body, Timestamp timestamp) {
+    public Message(String senderId, String body, String photo_url ,Timestamp timestamp) {
         this.senderId = senderId;
         this.body = body;
-        this.timestamp = timestamp;
-    }
-
-    public Message(String id, String senderId, Timestamp timestamp, String photo_url) {
-        this.id = id;
-        this.senderId = senderId;
-        this.timestamp = timestamp;
         this.photo_url = photo_url;
+        this.timestamp = timestamp;
     }
 
     @Exclude
