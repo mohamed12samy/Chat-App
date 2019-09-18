@@ -122,26 +122,28 @@ public class ChatRoomActivity extends AppCompatActivity implements Clicklistener
             @Override
             public void onChanged(List<Message> mMessages) {
                 int addedSize;
-                if (messages == null || messages.isEmpty()) {
-                    if (mMessages == null || mMessages.isEmpty())
-                        addedSize = 0;
-                    else
-                        addedSize = 1;
-                } else {
-                    addedSize = mMessages.size() - messages.size();
-                }
-                int offset = manager.findFirstVisibleItemPosition();
-                messages  = new ArrayList<>();
-                messages.addAll(mMessages);
-                adapter.setData(messages);
-                adapter.notifyDataSetChanged();
-                if (addedSize == 1) {
-                    Log.i("addedSize", addedSize+"");
-                    recyclerView.scrollToPosition(messages.size() - 1);
-                } else if (addedSize > 1 && addedSize <= 20){
-                    Log.i("addedSize", addedSize+"");
-                    Log.i("firstItemIndex", offset+"");
-                    recyclerView.scrollToPosition(addedSize+offset+6);
+                if (mMessages != null) {
+                    if (messages == null || messages.isEmpty()) {
+                        if (mMessages == null || mMessages.isEmpty())
+                            addedSize = 0;
+                        else
+                            addedSize = 1;
+                    } else {
+                        addedSize = mMessages.size() - messages.size();
+                    }
+                    int offset = manager.findFirstVisibleItemPosition();
+                    messages = new ArrayList<>();
+                    messages.addAll(mMessages);
+                    adapter.setData(messages);
+                    adapter.notifyDataSetChanged();
+                    if (addedSize == 1) {
+                        Log.i("addedSize", addedSize + "");
+                        recyclerView.scrollToPosition(messages.size() - 1);
+                    } else if (addedSize > 1 && addedSize <= 20) {
+                        Log.i("addedSize", addedSize + "");
+                        Log.i("firstItemIndex", offset + "");
+                        recyclerView.scrollToPosition(addedSize + offset + 6);
+                    }
                 }
             }
         });
@@ -286,8 +288,7 @@ public class ChatRoomActivity extends AppCompatActivity implements Clicklistener
             Uri tempUri = getImageUri(getApplicationContext(), photo);
 
             photoViewing(tempUri, photo);
-        }
-        else if (requestCode == PICK_IMAGE_GALLERY && resultCode == RESULT_OK) {
+        } else if (requestCode == PICK_IMAGE_GALLERY && resultCode == RESULT_OK) {
             final Uri selectedImage = data.getData();
             try {
                 Bitmap bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), selectedImage);
@@ -305,12 +306,14 @@ public class ChatRoomActivity extends AppCompatActivity implements Clicklistener
             }
         }
     }
+
     public Uri getImageUri(Context inContext, Bitmap inImage) {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         inImage.compress(Bitmap.CompressFormat.JPEG, 100, bytes);
         String path = MediaStore.Images.Media.insertImage(inContext.getContentResolver(), inImage, "Title", null);
         return Uri.parse(path);
     }
+
     private void photoViewing(final Uri selectedImage, Bitmap bitmap) {
         mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
         imageToSend.setImageBitmap(bitmap);
@@ -331,7 +334,7 @@ public class ChatRoomActivity extends AppCompatActivity implements Clicklistener
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        Log.d("sdsd","++++++++++++++++");
+        Log.d("sdsd", "++++++++++++++++");
 
         if (requestCode == REQUEST_CODE) {
             if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
@@ -362,20 +365,20 @@ public class ChatRoomActivity extends AppCompatActivity implements Clicklistener
                     @Override
                     public void onClick(DialogInterface dialog, int item) {
                         if (options[item].equals("Take Photo")) {
-                            Log.d("sdsd","*8888881");
+                            Log.d("sdsd", "*8888881");
 
                             dialog.dismiss();
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                                 if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-                                    Log.d("sdsd","*1111111");
+                                    Log.d("sdsd", "*1111111");
 
                                     requestPermissions(new String[]{Manifest.permission.CAMERA}, 100);
                                 } else {
-                                    Log.d("sdsd","********");
+                                    Log.d("sdsd", "********");
                                     Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
                                     startActivityForResult(cameraIntent, PICK_IMAGE_CAMERA);
                                 }
-                            }else {
+                            } else {
                                 Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
                                 startActivityForResult(cameraIntent, PICK_IMAGE_CAMERA);
                             }
