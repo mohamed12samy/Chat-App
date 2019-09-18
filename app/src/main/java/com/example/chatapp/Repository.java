@@ -1,5 +1,6 @@
 package com.example.chatapp;
 
+import android.net.Uri;
 import android.util.Log;
 import android.util.Pair;
 
@@ -22,6 +23,8 @@ import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -177,7 +180,7 @@ public class Repository {
 
     List<Message> data = new ArrayList<>();
 
-    public void sendMessage(final String body) {
+    public void sendMessage(final String body, final String image) {
 
         if (chatRoomId == null) {
             List<String> users = new ArrayList<>();
@@ -190,7 +193,9 @@ public class Repository {
                         @Override
                         public void onSuccess(DocumentReference documentReference) {
                             chatRoomId = documentReference.getId();
-                            final Message message = new Message(myId, body, Timestamp.now());
+
+                            final Message message = new Message(myId, body,image, Timestamp.now());
+
                             db.collection("ChatRooms").document(chatRoomId).collection("messages")
                                     .add(message)
                                     .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
@@ -206,7 +211,7 @@ public class Repository {
                         }
                     });
         } else {
-            final Message message = new Message(myId, body, Timestamp.now());
+            final Message message = new Message(myId, body,image, Timestamp.now());
             db.collection("ChatRooms").document(chatRoomId).collection("messages")
                     .add(message)
                     .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
@@ -222,7 +227,7 @@ public class Repository {
 
     String chatRoomReceiver;
 
-    public void forwardMessage(final String body, final String receiverEmail) {
+    public void forwardMessage(final String body,final String image, final String receiverEmail) {
 
         db.collection("ChatRooms")
                 .whereArrayContains("users", App.getmFirebaseUser().getEmail())
@@ -252,7 +257,7 @@ public class Repository {
                                     @Override
                                     public void onSuccess(DocumentReference documentReference) {
                                         chatRoomReceiver = documentReference.getId();
-                                        final Message message = new Message(myId, body, Timestamp.now());
+                                        final Message message = new Message(myId,body, image, Timestamp.now());
                                         db.collection("ChatRooms").document(chatRoomReceiver)
                                                 .collection("messages")
                                                 .add(message)
@@ -264,7 +269,7 @@ public class Repository {
                                     }
                                 });
                     } else {
-                        final Message message = new Message(myId, body, Timestamp.now());
+                        final Message message = new Message(myId, body,image, Timestamp.now());
                         db.collection("ChatRooms").document(chatRoomReceiver)
                                 .collection("messages")
                                 .add(message)
@@ -388,5 +393,22 @@ public class Repository {
         messages = new MutableLiveData<>();
         chatRoomId = null;
         secondUserId = null;
+    }
+
+    public void storeImageToStorage(Uri imagUri){
+        final StorageReference photoRef = App.getPhotoReference().child(imagUri.getLastPathSegment());
+        photoRef.putFile(imagUri).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+            @Override
+            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot/*the key to getting thr\e URL of the file that was just sent to the storage*/) {
+                photoRef.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                    @Override
+                    public void onSuccess(Uri uri) {
+                        String imageUrl = uri.toString();
+                        sendMessage(null,imageUrl);
+
+                    }
+                });
+            }
+        });
     }
 }

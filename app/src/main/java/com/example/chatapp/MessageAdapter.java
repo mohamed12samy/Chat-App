@@ -3,6 +3,7 @@ package com.example.chatapp;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
@@ -10,6 +11,11 @@ import java.util.List;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.drawable.GlideDrawable;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.target.Target;
 
 public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageViewHolder> {
 
@@ -71,11 +77,13 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
 
         private TextView messageTextView;
         private TextView timestampTextView;
+        private ImageView messageImageView;
 
         public MessageViewHolder(@NonNull View itemView) {
             super(itemView);
             messageTextView = itemView.findViewById(R.id.messageTextView);
             timestampTextView = itemView.findViewById(R.id.timestampTextView);
+            messageImageView = itemView.findViewById(R.id.photo);
 
             itemView.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
@@ -87,7 +95,30 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
         }
 
         public void bind(final Message message) {
-            messageTextView.setText(message.getBody());
+            if(message.getBody() == null){
+                messageImageView.setVisibility(View.VISIBLE);
+                messageTextView.setVisibility(View.GONE);
+                Glide.with(messageImageView.getContext())
+                        .load(message.getPhoto_url())
+                        .listener(new RequestListener<String, GlideDrawable>() {
+                            @Override
+                            public boolean onException(Exception e, String model, Target<GlideDrawable> target, boolean isFirstResource) {
+                                return false;
+                            }
+
+                            @Override
+                            public boolean onResourceReady(GlideDrawable resource, String model, Target<GlideDrawable> target, boolean isFromMemoryCache, boolean isFirstResource) {
+                                messageImageView.setImageDrawable(resource);
+                                return false;
+                            }
+                        })
+                        .into(messageImageView);
+
+            }else if(message.getPhoto_url() == null){
+                messageImageView.setVisibility(View.GONE);
+                messageTextView.setVisibility(View.VISIBLE);
+                messageTextView.setText(message.getBody());
+            }
             timestampTextView.setText(message.getTimestamp().toDate().toLocaleString());
         }
     }

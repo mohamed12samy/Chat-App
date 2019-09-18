@@ -31,14 +31,16 @@ public class ForwardMessageDialog extends Dialog implements Clicklistener{
 
     String secondUserEmail;
     String mMessage;
+    String mImage;
 
-    public ForwardMessageDialog(Context context, LifecycleOwner lifecycleOwner, String userEmail, String message) {
+    public ForwardMessageDialog(Context context, LifecycleOwner lifecycleOwner, String userEmail, String message, String image) {
         super(context);
         setContentView(R.layout.fowward_message_layout);
         mContext = context;
         mLifecycleOwner = lifecycleOwner;
         secondUserEmail = userEmail;
         mMessage = message;
+        mImage = image;
 
         usersAdapter = new UsersAdapter(1, users, this);
     }
@@ -50,7 +52,7 @@ public class ForwardMessageDialog extends Dialog implements Clicklistener{
         recyclerView = findViewById(R.id.user_recycler);
         recyclerView.setLayoutManager(new LinearLayoutManager(mContext));
         recyclerView.setAdapter(usersAdapter);
-
+        this.getWindow().setTitle("send to: ");
         this.getWindow().setBackgroundDrawableResource(R.drawable.background_dialog);
 
         mUserViewModel.getUsers().observe(mLifecycleOwner, new Observer<List<User>>() {
@@ -104,7 +106,7 @@ public class ForwardMessageDialog extends Dialog implements Clicklistener{
     @Override
     public void onItemClicked(int position) {
         Log.d("TYY",users.get(position).getEmail());
-        mUserViewModel.forqardMessage(mMessage,users.get(position).getEmail());
+        mUserViewModel.forqardMessage(mMessage,mImage,users.get(position).getEmail());
         //dismiss();
     }
 }
