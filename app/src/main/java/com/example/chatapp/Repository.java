@@ -16,6 +16,7 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
@@ -38,6 +39,7 @@ public class Repository {
     private MutableLiveData<List<Message>> messages;
     private String chatRoomId;
     private String secondUserId;
+    private DocumentSnapshot lastMessageShownId;
     private String myId = App.getmFirebaseUser().getEmail();
     private MutableLiveData<List<User>> users = new MutableLiveData<>();
     private MutableLiveData<List<Pair<User, Message>>> conversations = new MutableLiveData<>();
@@ -105,31 +107,75 @@ public class Repository {
                         chatRoomId = null;
                         messages.setValue(new ArrayList<Message>());
                     } else {
-
-                        final CollectionReference docRef = db.collection("ChatRooms").document(chatRoomId)
-                                .collection("messages");
-
-                        docRef.orderBy("timestamp", Query.Direction.ASCENDING)
+                        db.collection("ChatRooms")
+                                .document(chatRoomId)
+                                .collection("messages")
+                                .orderBy("timestamp", Query.Direction.DESCENDING)
+                                .limit(20)
                                 .addSnapshotListener(new EventListener<QuerySnapshot>() {
                                     @Override
                                     public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
-
                                         List<Message> data = new ArrayList<>();
                                         for (QueryDocumentSnapshot documentSnapshot : queryDocumentSnapshots) {
                                             Message message = documentSnapshot.toObject(Message.class);
                                             message.setId(documentSnapshot.getId());
-                                            data.add(message);
-                                            Log.i("MessageSenderId:", message.getSenderId());
+                                            data.add(0,message);
+                                            Log.i("lastMessageShownId:", documentSnapshot.getId());
+                                            lastMessageShownId = documentSnapshot;
                                         }
                                         messages.setValue(data);
                                     }
                                 });
+//                        final CollectionReference docRef = db.collection("ChatRooms").document(chatRoomId)
+//                                .collection("messages");
+//
+//                        docRef.orderBy("timestamp", Query.Direction.ASCENDING)
+//                                .addSnapshotListener(new EventListener<QuerySnapshot>() {
+//                                    @Override
+//                                    public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
+//
+//                                        List<Message> data = new ArrayList<>();
+//                                        for (QueryDocumentSnapshot documentSnapshot : queryDocumentSnapshots) {
+//                                            Message message = documentSnapshot.toObject(Message.class);
+//                                            message.setId(documentSnapshot.getId());
+//                                            data.add(message);
+//                                            Log.i("MessageSenderId:", message.getSenderId());
+//                                        }
+//                                        messages.setValue(data);
+//                                    }
+//                                });
                     }
                 }
             }
         });
 
         return messages;
+    }
+
+    public void getOlderMessages() {
+        if (chatRoomId != null) {
+            db.collection("ChatRooms")
+                    .document(chatRoomId)
+                    .collection("messages")
+                    .orderBy("timestamp", Query.Direction.DESCENDING)
+                    .limit(20)
+                    .startAfter(lastMessageShownId)
+                    .get()
+                    .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                        @Override
+                        public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                            List<Message> data = messages.getValue();
+                            for (QueryDocumentSnapshot documentSnapshot : queryDocumentSnapshots) {
+                                Message message = documentSnapshot.toObject(Message.class);
+                                message.setId(documentSnapshot.getId());
+                                data.add(0, message);
+                                Log.i("lastMessageShownId:", documentSnapshot.getId());
+                                lastMessageShownId = documentSnapshot;
+                            }
+                            messages.setValue(data);
+                        }
+                    });
+        }
     }
 
     List<Message> data = new ArrayList<>();

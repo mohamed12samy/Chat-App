@@ -34,6 +34,10 @@ public class ChatRoomViewModel extends AndroidViewModel {
         return messages;
     }
 
+    public void getOlderMessages() {
+        repository.getOlderMessages();
+    }
+
     public void removeMessage(Message message){
         repository.removeMessage(message.getId());
     }
