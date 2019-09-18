@@ -50,6 +50,7 @@
             android:paddingLeft="16dp"
             android:paddingBottom="10dp"
             android:src="@drawable/forward"
+            android:visibility="gone"
             />
         </RelativeLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

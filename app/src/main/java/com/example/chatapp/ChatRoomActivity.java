@@ -18,6 +18,7 @@ import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.List;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.Observer;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -29,7 +30,7 @@ import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 
-public class ChatRoomActivity extends AppCompatActivity implements Clicklistener{
+public class ChatRoomActivity extends AppCompatActivity implements Clicklistener {
 
     private RecyclerView recyclerView;
     private MessageAdapter adapter;
@@ -38,6 +39,7 @@ public class ChatRoomActivity extends AppCompatActivity implements Clicklistener
     private String secondUserEmail = "";
     private String secondUserPhoto;
     private String secondUserName;
+    private int currentPage = 1;
 
     private List<Message> messages = new ArrayList<>();
 
@@ -89,23 +91,63 @@ public class ChatRoomActivity extends AppCompatActivity implements Clicklistener
                 .into(userImage);
 
         recyclerView = findViewById(R.id.recyclerView);
-        LinearLayoutManager manager = new LinearLayoutManager(this);
+        final LinearLayoutManager manager = new LinearLayoutManager(this);
         recyclerView.setLayoutManager(manager);
-        viewModel = new ChatRoomViewModel(getApplication(),secondUserEmail);
+        viewModel = new ChatRoomViewModel(getApplication(), secondUserEmail);
         viewModel.getMessages().observe(this, new Observer<List<Message>>() {
             @Override
             public void onChanged(List<Message> mMessages) {
-                messages.clear();
+                int addedSize;
+                if (messages == null || messages.isEmpty()) {
+                    if (mMessages == null || mMessages.isEmpty())
+                        addedSize = 0;
+                    else
+                        addedSize = 1;
+                } else {
+                    addedSize = mMessages.size() - messages.size();
+                }
+                int offset = manager.findFirstVisibleItemPosition();
+                messages  = new ArrayList<>();
                 messages.addAll(mMessages);
                 adapter.setData(messages);
                 adapter.notifyDataSetChanged();
-                recyclerView.scrollToPosition(mMessages.size() - 1);
+                if (addedSize == 1) {
+                    Log.i("addedSize", addedSize+"");
+                    recyclerView.scrollToPosition(messages.size() - 1);
+                } else if (addedSize > 1 && addedSize <= 20){
+                    Log.i("addedSize", addedSize+"");
+                    Log.i("firstItemIndex", offset+"");
+                    recyclerView.scrollToPosition(addedSize+offset+6);
+                }
             }
         });
-        adapter = new MessageAdapter(viewModel.getMyId(), viewModel.getMessages().getValue(),this);
+        adapter = new MessageAdapter(viewModel.getMyId(), viewModel.getMessages().getValue(), this);
         recyclerView.setAdapter(adapter);
         messageEditText = findViewById(R.id.messageEditText);
 
+        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
+                super.onScrollStateChanged(recyclerView, newState);
+                if (!recyclerView.canScrollVertically(-1) && newState == RecyclerView.SCROLL_STATE_IDLE) {
+                    viewModel.getOlderMessages();
+                }
+            }
+//            @Override
+//            public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
+//                super.onScrollStateChanged(recyclerView, newState);
+//                if (newState == RecyclerView.SCROLL_STATE_SETTLING) {
+//                    viewModel.getOlderMessages();
+//                }
+//            }
+//            @Override
+//            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+//                super.onScrolled(recyclerView, dx, dy);
+//                if (dy <=0 && recyclerView.getScrollState() == RecyclerView.SCROLL_STATE_SETTLING) {
+//                    viewModel.getOlderMessages();
+//                }
+//            }
+        });
 //        messageEditText.setDrawableC
 
 
@@ -126,7 +168,7 @@ public class ChatRoomActivity extends AppCompatActivity implements Clicklistener
         viewModel.onChatClose();
     }
 
-    private void buttonClick(final int position){
+    private void buttonClick(final int position) {
         deleteMessage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -149,35 +191,36 @@ public class ChatRoomActivity extends AppCompatActivity implements Clicklistener
         forwardMessage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                ForwardMessageDialog forwadDialog=new ForwardMessageDialog(ChatRoomActivity.this,
-                        ChatRoomActivity.this,secondUserEmail,
+                ForwardMessageDialog forwadDialog = new ForwardMessageDialog(ChatRoomActivity.this,
+                        ChatRoomActivity.this, secondUserEmail,
                         messages.get(position).getBody());
-                Log.d("USUS",secondUserEmail);
+                Log.d("USUS", secondUserEmail);
                 forwadDialog.show();
                 mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
             }
         });
     }
+
     @Override
     public void onItemClicked(int position) {
         Message message = messages.get(position);
-        if(!message.getSenderId().equals(App.getmFirebaseUser().getEmail())){
+        if (!message.getSenderId().equals(App.getmFirebaseUser().getEmail())) {
             deleteMessage.setVisibility(View.GONE);
-         }else deleteMessage.setVisibility(View.VISIBLE);
+        } else deleteMessage.setVisibility(View.VISIBLE);
 
         mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
         buttonClick(position);
     }
 
     @Override
-    public boolean dispatchTouchEvent(MotionEvent event){
+    public boolean dispatchTouchEvent(MotionEvent event) {
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
-            if (mBottomSheetBehavior.getState()==BottomSheetBehavior.STATE_EXPANDED) {
+            if (mBottomSheetBehavior.getState() == BottomSheetBehavior.STATE_EXPANDED) {
 
                 Rect outRect = new Rect();
                 bottomSheet.getGlobalVisibleRect(outRect);
 
-                if(!outRect.contains((int)event.getRawX(), (int)event.getRawY())){
+                if (!outRect.contains((int) event.getRawX(), (int) event.getRawY())) {
                     mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
                 }
             }

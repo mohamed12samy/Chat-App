@@ -53,6 +53,7 @@
                     app:layout_constraintWidth_max="wrap"
                     app:layout_constraintWidth_percent="0.8"
                     android:src="@drawable/forward"
+                    android:visibility="gone"
                     />
         </RelativeLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>
