@@ -1,13 +1,21 @@
 package com.example.chatapp;
 
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
+import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -19,8 +27,9 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.resource.drawable.GlideDrawable;
 import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
 
-public class ChatRoomActivity extends AppCompatActivity {
+public class ChatRoomActivity extends AppCompatActivity implements Clicklistener{
 
     private RecyclerView recyclerView;
     private MessageAdapter adapter;
@@ -30,8 +39,16 @@ public class ChatRoomActivity extends AppCompatActivity {
     private String secondUserPhoto;
     private String secondUserName;
 
+    private List<Message> messages = new ArrayList<>();
+
+    private BottomSheetBehavior mBottomSheetBehavior;
+    View bottomSheet;
     ImageView userImage;
     TextView userName;
+    Button deleteMessage;
+    Button copyMessage;
+    Button forwardMessage;
+    private DrawableClickListener clickListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,7 +62,15 @@ public class ChatRoomActivity extends AppCompatActivity {
         userName = findViewById(R.id.toolbar_title);
         userImage = findViewById(R.id.user_image);
 
-        findViewById(R.id.sign_out).setVisibility(View.GONE);
+        bottomSheet = findViewById(R.id.design_bottom_sheet);
+        mBottomSheetBehavior = BottomSheetBehavior.from(bottomSheet);
+        mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
+
+        deleteMessage = findViewById(R.id.delete);
+        copyMessage = findViewById(R.id.copy);
+        forwardMessage = findViewById(R.id.forward);
+
+        findViewById(R.id.sign_out).setVisibility(View.INVISIBLE);
         userName.setText(secondUserName);
         Glide.with(userImage.getContext()).load(secondUserPhoto)
                 .placeholder(R.drawable.user)
@@ -69,15 +94,21 @@ public class ChatRoomActivity extends AppCompatActivity {
         viewModel = new ChatRoomViewModel(getApplication(),secondUserEmail);
         viewModel.getMessages().observe(this, new Observer<List<Message>>() {
             @Override
-            public void onChanged(List<Message> messages) {
+            public void onChanged(List<Message> mMessages) {
+                messages.clear();
+                messages.addAll(mMessages);
                 adapter.setData(messages);
                 adapter.notifyDataSetChanged();
-                recyclerView.scrollToPosition(messages.size() - 1);
+                recyclerView.scrollToPosition(mMessages.size() - 1);
             }
         });
-        adapter = new MessageAdapter(viewModel.getMyId(), viewModel.getMessages().getValue());
+        adapter = new MessageAdapter(viewModel.getMyId(), viewModel.getMessages().getValue(),this);
         recyclerView.setAdapter(adapter);
         messageEditText = findViewById(R.id.messageEditText);
+
+//        messageEditText.setDrawableC
+
+
     }
 
     public void sendMessageButton(View view) {
@@ -93,5 +124,65 @@ public class ChatRoomActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         viewModel.onChatClose();
+    }
+
+    private void buttonClick(final int position){
+        deleteMessage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                viewModel.removeMessage(messages.get(position));
+                messages.remove(position);
+                adapter.notifyItemRemoved(position);
+                mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
+            }
+        });
+        copyMessage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                ClipData clip = ClipData.newPlainText("message", messages.get(position).getBody());
+                clipboard.setPrimaryClip(clip);
+                mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
+            }
+        });
+
+        forwardMessage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                ForwardMessageDialog forwadDialog=new ForwardMessageDialog(ChatRoomActivity.this,
+                        ChatRoomActivity.this,secondUserEmail,
+                        messages.get(position).getBody());
+                Log.d("USUS",secondUserEmail);
+                forwadDialog.show();
+                mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
+            }
+        });
+    }
+    @Override
+    public void onItemClicked(int position) {
+        Message message = messages.get(position);
+        if(!message.getSenderId().equals(App.getmFirebaseUser().getEmail())){
+            deleteMessage.setVisibility(View.GONE);
+         }else deleteMessage.setVisibility(View.VISIBLE);
+
+        mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+        buttonClick(position);
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent event){
+        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+            if (mBottomSheetBehavior.getState()==BottomSheetBehavior.STATE_EXPANDED) {
+
+                Rect outRect = new Rect();
+                bottomSheet.getGlobalVisibleRect(outRect);
+
+                if(!outRect.contains((int)event.getRawX(), (int)event.getRawY())){
+                    mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
+                }
+            }
+        }
+
+        return super.dispatchTouchEvent(event);
     }
 }

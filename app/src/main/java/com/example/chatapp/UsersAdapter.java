@@ -2,6 +2,7 @@ package com.example.chatapp;
 
 
 import android.content.Context;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,12 +23,12 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.ViewHolder> 
 
 
     private List<User> users;
-    private Context context;
     private Clicklistener clicklistener;
+    int flag;
 
-    public UsersAdapter(Context context, List<User> users, Clicklistener clicklistener) {
+    public UsersAdapter(int flag, List<User> users, Clicklistener clicklistener) {
+        this.flag = flag;
         this.users = users;
-        this.context = context;
         this.clicklistener = clicklistener;
     }
 
@@ -84,12 +85,23 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.ViewHolder> 
             userImage = itemView.findViewById(R.id.user_image);
             userName = itemView.findViewById(R.id.user_name);
 
-            itemView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    clicklistener.onItemClicked(getAdapterPosition());
-                }
-            });
+            if (flag == 1) {
+                itemView.findViewById(R.id.last_message).setVisibility(View.GONE);
+                itemView.findViewById(R.id.send_forward).setVisibility(View.VISIBLE);
+                itemView.findViewById(R.id.send_forward).setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        clicklistener.onItemClicked(getAdapterPosition());
+                    }
+                });
+            } else if (flag == 0) {
+                itemView.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        clicklistener.onItemClicked(getAdapterPosition());
+                    }
+                });
+            }
         }
     }
 

@@ -20,6 +20,8 @@ public class UserViewModel extends ViewModel {
 
         return users;
     }
-
+public void forqardMessage(String message,String receiver){
+       mainRepository.forwardMessage(message,receiver);
+    }
 
 }

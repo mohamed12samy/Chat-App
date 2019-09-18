@@ -7,4 +7,6 @@
     <color name="transparent">#00000000</color>
     <color name="backgroundDark">#D8FFA9</color>
     <color name="backgroundLight">#ECECEC</color>
+    <color name="background">#141518</color>
+
 </resources>

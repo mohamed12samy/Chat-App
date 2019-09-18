@@ -15,7 +15,6 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
@@ -38,7 +37,7 @@ public class Repository {
     private String secondUserId;
     private String myId = App.getmFirebaseUser().getEmail();
     private MutableLiveData<List<User>> users = new MutableLiveData<>();
-    private MutableLiveData<List<Pair<User, String>>> conversations = new MutableLiveData<>();
+    private MutableLiveData<List<Pair<User, Message>>> conversations = new MutableLiveData<>();
 
     private Repository() {
         db = App.getFirebaseFirestore();
@@ -80,6 +79,7 @@ public class Repository {
     }
 
     public MutableLiveData<List<Message>> getMessages(final String secondUserId) {
+        Log.d("YUYU", secondUserId);
         this.secondUserId = secondUserId;
 
         db.collection("ChatRooms")
@@ -174,124 +174,170 @@ public class Repository {
         }
     }
 
-    public LiveData<List<User>> getUsers() {
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("Users")
-                .addSnapshotListener(new EventListener<QuerySnapshot>() {
-                    @Override
-                    public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
-                        List<User> list = new ArrayList<>();
-                        for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
-                            Log.d("TAG", document.getId() + " => " + document.getData().get("email"));
-
-                            if (!document.getData().get("email").equals(App.getmFirebaseUser().getEmail())) {
-
-                                Log.d("asdd", document.getData().get("email") + "   " + App.getmFirebaseUser().getEmail());
-
-                                list.add(new User(document.getId(), document.getData().get("name") + "",
-                                        document.getData().get("url_photo") + "", document.getData().get("email") + ""));
-                            }
-                        }
-                        users.postValue(list);
-
-                    }
-                });/*
-                .get()
-                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                    @Override
-                    public void onComplete(@androidx.annotation.NonNull Task<QuerySnapshot> task) {
-                        if (task.isSuccessful()) {
-                            List<User> list = new ArrayList<>();
-                            for (QueryDocumentSnapshot document : task.getResult()) {
-                                Log.d("TAG", document.getId() + " => " + document.getData().get("email"));
-
-                                if (!document.getData().get("email").equals(App.getmFirebaseUser().getEmail())) {
-
-                                    Log.d("asdd", document.getData().get("email") + "   " + App.getmFirebaseUser().getEmail());
-
-                                    list.add(new User(document.getId(), document.getData().get("name") + "",
-                                            document.getData().get("url_photo") + "", document.getData().get("email") + ""));
-                                }
-                            }
-                            users.postValue(list);
-                        } else {
-                            Log.w("TAG", "Error getting documents.", task.getException());
-                        }
-                    }
-                });*/
-        return users;
-    }
-
-    public LiveData<List<Pair<User, String>>> getConversations() {
+    String chatRoomReceiver;
+    public void forwardMessage(final String body, final String receiverEmail) {
 
         db.collection("ChatRooms")
                 .whereArrayContains("users", App.getmFirebaseUser().getEmail())
-                .addSnapshotListener(new EventListener<QuerySnapshot>() {
-                    List<Pair<User, String>> list1 = new ArrayList<>();
+                .get().addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+            @Override
+            public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
 
-                    @Override
-                    public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
-                        for (final QueryDocumentSnapshot document : queryDocumentSnapshots) {
-                            List<String> users = (List<String>) document.getData().get("users");
-                            Log.d("emails", document.getId() + " => " + users.get(0));
+                boolean chatRoomFound = false;
+                if (queryDocumentSnapshots.size() != 0) {
+                    for (int i = 0; i <= queryDocumentSnapshots.size() - 1; i++) {
+                        List<String> users = (List<String>) queryDocumentSnapshots.getDocuments().get(i).get("users");
+                        if (users.contains(receiverEmail)) {
+                            chatRoomReceiver = queryDocumentSnapshots.getDocuments().get(i).getId();
+                            chatRoomFound = true;
+                            break;
+                        }
+                    }
+                    if (!chatRoomFound) {
+                        chatRoomReceiver = null;
+                        List<String> users = new ArrayList<>();
+                        users.add(myId);
+                        users.add(receiverEmail);
 
-                            String email = App.getmFirebaseUser().getEmail().equals(users.get(0)) ?
-                                    users.get(1) + "" :
-                                    users.get(0) + "";
-
-                            db.collection("Users")
-                                    .whereEqualTo("email", email)
-                                    .get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                                @Override
-                                public void onComplete(@NonNull Task<QuerySnapshot> task) {
-
-                                    for (QueryDocumentSnapshot document1 : task.getResult()) {
-
-                                        final User user = new User(document1.getId(), document1.getData().get("name") + "",
-                                                document1.getData().get("url_photo") + "", document1.getData().get("email") + "");
-
-                                        db.collection("ChatRooms").document(document.getId()).collection("messages")
-                                                .orderBy("timestamp", Query.Direction.DESCENDING)
-                                                .addSnapshotListener(new EventListener<QuerySnapshot>() {
+                        db.collection("ChatRooms")
+                                .add(new ChatRoom(users))
+                                .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+                                    @Override
+                                    public void onSuccess(DocumentReference documentReference) {
+                                        chatRoomReceiver = documentReference.getId();
+                                        final Message message = new Message(myId, body, Timestamp.now());
+                                        db.collection("ChatRooms").document(chatRoomReceiver)
+                                                .collection("messages")
+                                                .add(message)
+                                                .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
                                                     @Override
-                                                    public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
-                                                        String message;
-                                                                if (queryDocumentSnapshots.size() > 0) {
-                                                                    message = queryDocumentSnapshots.getDocuments().get(0).get("body") + "";
-
-                                                                    String message1 = "";
-                                                                    if (queryDocumentSnapshots.size() > 1) {
-                                                                        message1 = queryDocumentSnapshots.getDocuments().get(1).get("body") + "";
-                                                                        list1.remove(new Pair<>(user, message1));
-                                                                    }
-                                                                    list1.add(0, new Pair<>(user, message));
-
-                                                                    Log.d("rtrt", list1.size() + "");
-                                                                    conversations.postValue(list1);
-                                                                }
-                                                    }
+                                                    public void onSuccess(DocumentReference documentReference) {}
                                                 });
+                                    }
+                                });
+                    } else {
+                        final Message message = new Message(myId, body, Timestamp.now());
+                        db.collection("ChatRooms").document(chatRoomReceiver)
+                                .collection("messages")
+                                .add(message)
+                                .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+                                    @Override
+                                    public void onSuccess(DocumentReference documentReference) {}
+                                });
+                    }
+                }
+            }
+        });
+    }
 
+                public LiveData<List<User>> getUsers () {
+                    FirebaseFirestore db = FirebaseFirestore.getInstance();
+                    db.collection("Users")
+                            .addSnapshotListener(new EventListener<QuerySnapshot>() {
+                                @Override
+                                public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
+                                    List<User> list = new ArrayList<>();
+                                    for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                                        Log.d("TAG", document.getId() + " => " + document.getData().get("email"));
+
+                                        if (!document.getData().get("email").equals(App.getmFirebaseUser().getEmail())) {
+
+                                            Log.d("asdd", document.getData().get("email") + "   " + App.getmFirebaseUser().getEmail());
+
+                                            list.add(new User(document.getId(), document.getData().get("name") + "",
+                                                    document.getData().get("url_photo") + "", document.getData().get("email") + ""));
+                                        }
+                                    }
+                                    users.postValue(list);
+
+                                }
+                            });
+                    return users;
+                }
+
+                public LiveData<List<Pair<User, Message>>> getConversations () {
+
+                    db.collection("ChatRooms")
+                            .whereArrayContains("users", App.getmFirebaseUser().getEmail())
+                            .addSnapshotListener(new EventListener<QuerySnapshot>() {
+                                List<Pair<User, Message>> list1 = new ArrayList<>();
+
+                                @Override
+                                public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
+                                    for (final QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                                        List<String> users = (List<String>) document.getData().get("users");
+                                        Log.d("emails", document.getId() + " => " + users.get(0));
+
+                                        String email = App.getmFirebaseUser().getEmail().equals(users.get(0)) ?
+                                                users.get(1) + "" :
+                                                users.get(0) + "";
+
+                                        db.collection("Users")
+                                                .whereEqualTo("email", email)
+                                                .get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                                            @Override
+                                            public void onComplete(@NonNull Task<QuerySnapshot> task) {
+
+                                                for (QueryDocumentSnapshot document1 : task.getResult()) {
+
+                                                    final User user = new User(document1.getId(), document1.getData().get("name") + "",
+                                                            document1.getData().get("url_photo") + "", document1.getData().get("email") + "");
+
+                                                    db.collection("ChatRooms").document(document.getId()).collection("messages")
+                                                            .orderBy("timestamp", Query.Direction.DESCENDING)
+                                                            .addSnapshotListener(new EventListener<QuerySnapshot>() {
+                                                                @Override
+                                                                public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
+                                                                    Message message;
+                                                                    if (queryDocumentSnapshots.size() > 0) {
+                                                                        message = queryDocumentSnapshots.getDocuments().get(0).toObject(Message.class);
+
+                                                                        Message message1;
+                                                                        if (queryDocumentSnapshots.size() > 1) {
+                                                                            message1 = queryDocumentSnapshots.getDocuments().get(1).toObject(Message.class);
+                                                                            list1.remove(new Pair<>(user, message1));
+                                                                        }
+                                                                        list1.add(0, new Pair<>(user, message));
+
+                                                                        Log.d("rtrt", list1.size() + "");
+                                                                        conversations.postValue(list1);
+                                                                    }
+                                                                }
+                                                            });
+
+                                                }
+                                            }
+                                        });
                                     }
                                 }
                             });
-                        }
-                    }
-                });
 
-        return conversations;
-    }
+                    return conversations;
+                }
 
 //    MutableLiveData<List<Message>> newMesssage = new MutableLiveData<>();
 
-    public void getNewMessage() {
+                public void removeMessage (String id){
+                    db.collection("ChatRooms").document(chatRoomId).collection("messages").document(id)
+                            .delete()
+                            .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                @Override
+                                public void onSuccess(Void aVoid) {
+                                    Log.d("TAG", "DocumentSnapshot successfully deleted!");
+                                }
+                            })
+                            .addOnFailureListener(new OnFailureListener() {
+                                @Override
+                                public void onFailure(@NonNull Exception e) {
+                                    Log.w("TAG", "Error deleting document", e);
+                                }
+                            });
 
+                }
 
-    }
-
-    public void onChatClose() {
-        messages = new MutableLiveData<>();
-        chatRoomId = null;
-        secondUserId = null;
-    }
-}
+                public void onChatClose () {
+                    messages = new MutableLiveData<>();
+                    chatRoomId = null;
+                    secondUserId = null;
+                }
+            }
