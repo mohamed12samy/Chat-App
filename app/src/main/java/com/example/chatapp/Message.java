@@ -8,6 +8,7 @@ public class Message {
     private String senderId;
     private String body;
     private Timestamp timestamp;
+    private String photo_url;
 
     public Message() {}
 
@@ -17,6 +18,13 @@ public class Message {
         this.timestamp = timestamp;
     }
 
+    public Message(String id, String senderId, Timestamp timestamp, String photo_url) {
+        this.id = id;
+        this.senderId = senderId;
+        this.timestamp = timestamp;
+        this.photo_url = photo_url;
+    }
+
     @Exclude
     public String getId() {
         return id;
@@ -24,6 +32,14 @@ public class Message {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getPhoto_url() {
+        return photo_url;
+    }
+
+    public void setPhoto_url(String photo_url) {
+        this.photo_url = photo_url;
     }
 
     public String getSenderId() {

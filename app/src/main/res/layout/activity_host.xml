@@ -28,14 +28,14 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        android:layout_marginBottom="4dp"
         >
         <com.google.android.material.bottomnavigation.BottomNavigationView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="50dp"
             android:id="@+id/bottom_nav_view"
             app:menu="@menu/menu_graph"
-            android:background="#fff">
+            android:background="#fff"
+            >
 
         </com.google.android.material.bottomnavigation.BottomNavigationView>
 

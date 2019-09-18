@@ -20,7 +20,7 @@ public class UsersFragment extends Fragment implements Clicklistener {
 
     List<User> users = new ArrayList<>();
     RecyclerView recyclerView;
-    UsersAdapter usersAdapter = new UsersAdapter(getActivity(), users, this);
+    UsersAdapter usersAdapter = new UsersAdapter(0, users, this);
 
     UserViewModel mUserViewModel = new UserViewModel();
 

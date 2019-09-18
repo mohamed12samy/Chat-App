@@ -14,6 +14,7 @@ public class ChatRoomViewModel extends AndroidViewModel {
     private MutableLiveData<List<Message>> messages;
     private Repository repository;
 
+
     public ChatRoomViewModel(@NonNull Application application, String secondUserId) {
         super(application);
         repository = Repository.getInstance();
@@ -32,6 +33,9 @@ public class ChatRoomViewModel extends AndroidViewModel {
         return messages;
     }
 
+    public void removeMessage(Message message){
+        repository.removeMessage(message.getId());
+    }
     public void onChatClose() {
         repository.onChatClose();
     }

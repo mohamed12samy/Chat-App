@@ -22,11 +22,11 @@ import de.hdodenhof.circleimageview.CircleImageView;
 public class ConversationsAdapter extends RecyclerView.Adapter<ConversationsAdapter.ViewHolder> {
 
 
-    private List<Pair<User , String>> conversations;
+    private List<Pair<User , Message>> conversations;
     private Context context;
     private Clicklistener clicklistener;
 
-    public ConversationsAdapter(Context context, List<Pair<User , String>> conversations,Clicklistener clicklistener) {
+    public ConversationsAdapter(Context context, List<Pair<User , Message>> conversations,Clicklistener clicklistener) {
         this.conversations = conversations;
         this.context = context;
         this.clicklistener = clicklistener;
@@ -63,8 +63,10 @@ public class ConversationsAdapter extends RecyclerView.Adapter<ConversationsAdap
                     }
                 })
                 .into(holder.userImage);
-
-        holder.lastMessage.setText(conversations.get(position).second);
+        Message message = conversations.get(position).second;
+        if (message.getSenderId().equals(App.getmFirebaseUser().getEmail()))
+            holder.lastMessage.setText("You: "+message.getBody());
+        else holder.lastMessage.setText(message.getBody());
     }
 
 

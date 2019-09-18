@@ -21,7 +21,7 @@ import java.util.List;
 
 
 public class ConversationsFragment extends Fragment implements Clicklistener{
-    List<Pair<User , String>> conversationss = new ArrayList<>();
+    List<Pair<User , Message>> conversationss = new ArrayList<>();
     RecyclerView recyclerView;
     ConversationsAdapter conversationsAdapter = new ConversationsAdapter(getActivity(), conversationss, this);
 
@@ -37,9 +37,9 @@ public class ConversationsFragment extends Fragment implements Clicklistener{
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
         recyclerView.setAdapter(conversationsAdapter);
 
-        mConversationsViewModel.getConversations().observe(this, new Observer<List<Pair<User , String>>>() {
+        mConversationsViewModel.getConversations().observe(this, new Observer<List<Pair<User , Message>>>() {
             @Override
-            public void onChanged(List<Pair<User , String>> conversation) {
+            public void onChanged(List<Pair<User , Message>> conversation) {
                 if(conversation != null) {
                     conversationss.clear();
                     conversationss.addAll(conversation);

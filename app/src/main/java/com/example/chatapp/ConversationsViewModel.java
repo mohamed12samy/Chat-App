@@ -13,7 +13,7 @@ import java.util.List;
 
 public class ConversationsViewModel extends AndroidViewModel {
 
-    private MutableLiveData<List<Pair<User , String>>> users = new MutableLiveData<>();
+    private MutableLiveData<List<Pair<User , Message>>> users = new MutableLiveData<>();
     private Repository mainRepository;
 
     public ConversationsViewModel(@NonNull Application application) {
@@ -23,11 +23,10 @@ public class ConversationsViewModel extends AndroidViewModel {
     }
 
 
-    public LiveData<List<Pair<User , String>>> getConversations(){
+    public LiveData<List<Pair<User , Message>>> getConversations(){
 
-        users = (MutableLiveData<List<Pair<User , String>>>) mainRepository.getConversations();
-        if(users.getValue() != null)
-            Log.d("dddddddddd",users.getValue().size()+"");
+        users = (MutableLiveData<List<Pair<User , Message>>>) mainRepository.getConversations();
+
         return users;
     }
 }

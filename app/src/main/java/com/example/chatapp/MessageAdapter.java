@@ -18,9 +18,12 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
     private List<Message> messagesList;
     private String myId;
 
-    public MessageAdapter(String myId, List<Message> messagesList) {
+    private Clicklistener clicklistener;
+
+    public MessageAdapter(String myId, List<Message> messagesList, Clicklistener clicklistener) {
         this.myId = myId;
         this.messagesList = messagesList;
+        this.clicklistener = clicklistener;
     }
 
     public void setData(List<Message> messages) {
@@ -73,6 +76,14 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
             super(itemView);
             messageTextView = itemView.findViewById(R.id.messageTextView);
             timestampTextView = itemView.findViewById(R.id.timestampTextView);
+
+            itemView.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View view) {
+                    clicklistener.onItemClicked(getAdapterPosition());
+                    return false;
+                }
+            });
         }
 
         public void bind(final Message message) {

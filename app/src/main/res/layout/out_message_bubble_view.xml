@@ -28,10 +28,7 @@
                     android:textColor="#000000"
                     android:textSize="14sp"
                     android:text="Hi"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="parent"
-                    app:layout_constraintWidth_max="wrap"
-                    app:layout_constraintWidth_percent="0.8" />
+                     />
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -39,6 +36,23 @@
                     android:id="@+id/timestampTextView"
                     android:layout_below="@id/messageTextView"
                     android:textSize="10sp"
+                    />
+
+                <ImageView
+                    android:id="@+id/photo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/outgoing_speech_bubble"
+                    android:lineSpacingExtra="2dp"
+                    android:paddingRight="16dp"
+                    android:paddingTop="4dp"
+                    android:paddingLeft="8dp"
+                    android:paddingBottom="10dp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="parent"
+                    app:layout_constraintWidth_max="wrap"
+                    app:layout_constraintWidth_percent="0.8"
+                    android:src="@drawable/forward"
                     />
         </RelativeLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>
