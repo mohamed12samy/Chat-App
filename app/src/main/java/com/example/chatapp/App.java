@@ -23,6 +23,8 @@ public class App extends Application {
     public final static String NAME = "name";
     public final static String EMAIL = "email";
     public final static String URL_PHOTO = "url_photo";
+    public final static String TOKEN = "token";
+    private static String token;
 
     @Override
     protected void attachBaseContext(Context base) {
@@ -37,6 +39,7 @@ public class App extends Application {
         mFirebaseFirestore = FirebaseFirestore.getInstance();
         storage = FirebaseStorage.getInstance();
         photoReference = storage.getReference().child("images");
+
     }
 
     public static App getInstance() {
@@ -56,5 +59,15 @@ public class App extends Application {
 
     public static StorageReference getPhotoReference() {
         return photoReference;
+    }
+
+    public static void setToken (String mToken)
+    {
+        mToken = token;
+    }
+
+    public static String getToken()
+    {
+        return token;
     }
 }

@@ -23,6 +23,8 @@ import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.iid.InstanceIdResult;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
@@ -61,10 +63,13 @@ public class Repository {
         String name = user.getDisplayName();
         String email = user.getEmail();
         String photo = String.valueOf(user.getPhotoUrl());
+         String token = App.getToken();
+
         Map<String, Object> mUser = new HashMap<>();
         mUser.put(App.NAME, name);
         mUser.put(App.EMAIL, email);
         mUser.put(App.URL_PHOTO, photo);
+        mUser.put(App.TOKEN,token);
         db.collection("Users").document().set(mUser)
                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
