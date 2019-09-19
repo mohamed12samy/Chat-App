@@ -349,7 +349,13 @@ public class Repository {
                                                             Message message1;
                                                             if (queryDocumentSnapshots.size() > 1) {
                                                                 message1 = queryDocumentSnapshots.getDocuments().get(1).toObject(Message.class);
-                                                                list1.remove(new Pair<>(user, message1));
+                                                                for(int i=0 ; i<list1.size() ; i++){
+                                                                    if(list1.get(i).first.getEmail().equals(user.getEmail())){
+                                                                        list1.remove(i);
+                                                                        break;
+                                                                    }
+                                                                }
+                                                               // list1.remove(new Pair<>(user, message1));
                                                             }
                                                             list1.add(0, new Pair<>(user, message));
 
@@ -386,7 +392,6 @@ public class Repository {
                         Log.w("TAG", "Error deleting document", e);
                     }
                 });
-
     }
 
     public void onChatClose() {
