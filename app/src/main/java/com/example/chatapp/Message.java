@@ -10,6 +10,7 @@ public class Message {
     private String senderId;
     private String body;
     private Timestamp timestamp;
+    private boolean isDeleted;
     private String photo_url;
 
     public Message() {}
@@ -19,6 +20,15 @@ public class Message {
         this.body = body;
         this.photo_url = photo_url;
         this.timestamp = timestamp;
+        this.isDeleted = false;
+    }
+
+    public Message(String senderId, String body, String photo_url ,Timestamp timestamp, boolean isDeleted) {
+        this.senderId = senderId;
+        this.body = body;
+        this.photo_url = photo_url;
+        this.timestamp = timestamp;
+        this.isDeleted = isDeleted;
     }
 
     @Exclude
@@ -60,5 +70,13 @@ public class Message {
 
     public void setTimestamp(Timestamp timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public boolean getIsDeleted() {
+        return isDeleted;
+    }
+
+    public void setIsDeleted(boolean deleted) {
+        isDeleted = deleted;
     }
 }

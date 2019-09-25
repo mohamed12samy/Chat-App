@@ -26,7 +26,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,7 +34,8 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
+import androidx.core.util.Pair;
+import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.Observer;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -59,7 +59,7 @@ public class ChatRoomActivity extends AppCompatActivity implements Clicklistener
     private String secondUserEmail = "";
     private String secondUserPhoto;
     private String secondUserName;
-    private int currentPage = 1;
+    private boolean queryInProgress = false;
 
     private List<Message> messages = new ArrayList<>();
 
@@ -117,37 +117,58 @@ public class ChatRoomActivity extends AppCompatActivity implements Clicklistener
         recyclerView = findViewById(R.id.recyclerView);
         final LinearLayoutManager manager = new LinearLayoutManager(this);
         recyclerView.setLayoutManager(manager);
+        recyclerView.setHasFixedSize(false);
         viewModel = new ChatRoomViewModel(getApplication(), secondUserEmail);
-        viewModel.getMessages().observe(this, new Observer<List<Message>>() {
+        viewModel.getMessages().observe(this, new Observer<List<Pair<Message, String>>>() {
             @Override
-            public void onChanged(List<Message> mMessages) {
-                int addedSize;
+            public void onChanged(List<Pair<Message, String>> mMessages) {
                 if (mMessages != null) {
-                    if (messages == null || messages.isEmpty()) {
-                        if (mMessages == null || mMessages.isEmpty())
-                            addedSize = 0;
-                        else
-                            addedSize = 1;
-                    } else {
-                        addedSize = mMessages.size() - messages.size();
-                    }
+                    List<Integer> toRemove = new ArrayList<>();
                     int offset = manager.findFirstVisibleItemPosition();
-                    messages = new ArrayList<>();
-                    messages.addAll(mMessages);
-                    adapter.setData(messages);
-                    adapter.notifyDataSetChanged();
-                    if (addedSize == 1) {
-                        Log.i("addedSize", addedSize + "");
-                        recyclerView.scrollToPosition(messages.size() - 1);
-                    } else if (addedSize > 1 && addedSize <= 20) {
-                        Log.i("addedSize", addedSize + "");
-                        Log.i("firstItemIndex", offset + "");
-                        recyclerView.scrollToPosition(addedSize + offset + 6);
+                    for (int i = 0; i < mMessages.size(); i++) {
+                        if (mMessages.get(i).second.equals("ADDEND")) {
+                            boolean found = false;
+                            for (Message message : messages) {
+                                if (mMessages.get(i).first.getId().equals(message.getId())) {
+                                    found = true;
+                                    break;
+                                }
+                            }
+                            if (!found) {
+                                messages.add(mMessages.get(i).first);
+                                adapter.addEnd(mMessages.get(i).first);
+//                                adapter.notifyItemInserted(messages.size() - 1);
+//                                adapter.notifyDataSetChanged();
+                                recyclerView.scrollToPosition(messages.size() - 1);
+                            }
+                        } else if (mMessages.get(i).second.equals("ADDSTART")) {
+                            queryInProgress = false;
+                            messages.add(0, mMessages.get(i).first);
+                            adapter.setData(messages);
+//                            adapter.notifyDataSetChanged();
+                            recyclerView.scrollToPosition(offset + 1);
+                            recyclerView.scrollToPosition(mMessages.size() + offset + 6);
+                        } else if (mMessages.get(i).second.equals("REMOVE")) {
+                            for (Message message : messages) {
+                                if (mMessages.get(i).first.getId().equals(message.getId())) {
+                                    toRemove.add(messages.indexOf(message));
+                                    Log.d("toRemove", message.getId());
+                                }
+                            }
+                        }
+                        if (!toRemove.isEmpty()) {
+                            for (Integer index : toRemove) {
+                                messages.remove(index);
+                                adapter.removeItemAt(index);
+//                                adapter.notifyItemRemoved(index);
+//                                adapter.setData(messages);
+                            }
+                        }
                     }
                 }
             }
         });
-        adapter = new MessageAdapter(viewModel.getMyId(), viewModel.getMessages().getValue(), this);
+        adapter = new MessageAdapter(viewModel.getMyId(), new ArrayList<Message>() /*viewModel.getMessages().getValue().first*/, this);
         recyclerView.setAdapter(adapter);
         messageEditText = findViewById(R.id.messageEditText);
 
@@ -156,7 +177,10 @@ public class ChatRoomActivity extends AppCompatActivity implements Clicklistener
             public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
                 super.onScrollStateChanged(recyclerView, newState);
                 if (!recyclerView.canScrollVertically(-1) && newState == RecyclerView.SCROLL_STATE_IDLE) {
-                    viewModel.getOlderMessages();
+                    if (!queryInProgress) {
+                        viewModel.getOlderMessages();
+                        queryInProgress = true;
+                    }
                 }
             }
 //            @Override
@@ -210,6 +234,7 @@ public class ChatRoomActivity extends AppCompatActivity implements Clicklistener
     protected void onDestroy() {
         super.onDestroy();
         viewModel.onChatClose();
+        viewModel.getMessages().removeObservers(this);
     }
 
     private void buttonClick(final int position) {
@@ -217,8 +242,8 @@ public class ChatRoomActivity extends AppCompatActivity implements Clicklistener
             @Override
             public void onClick(View view) {
                 viewModel.removeMessage(messages.get(position));
-                messages.remove(position);
-                adapter.notifyItemRemoved(position);
+//                messages.remove(position);
+//                adapter.notifyItemRemoved(position);
                 mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
             }
         });

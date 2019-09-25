@@ -40,12 +40,25 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     @Override
     public void onMessageReceived(@NonNull RemoteMessage remoteMessage) {
         super.onMessageReceived(remoteMessage);
-        generateNotification(remoteMessage.getNotification().getBody(), remoteMessage.getNotification().getTitle());
+
+        generateNotification(remoteMessage);
     }
 
-    private void generateNotification(String body, String title) {
-        Intent intent = new Intent(this, HostActivity.class);
+    private void generateNotification(RemoteMessage remoteMessage) {
+        String title = remoteMessage.getNotification().getTitle();
+        String body = remoteMessage.getNotification().getBody();
+        String clickAction = remoteMessage.getNotification().getClickAction();
+
+
+        Intent intent = new Intent(this, ChatRoomActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        intent.putExtra("user_email",remoteMessage.getData().get("user_email"));
+        intent.putExtra("user_name",remoteMessage.getData().get("user_name"));
+        intent.putExtra("user_url_photo",remoteMessage.getData().get("user_url_photo"));
+
+        intent.setAction(clickAction);
+
+
 
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent
                 , PendingIntent.FLAG_ONE_SHOT);

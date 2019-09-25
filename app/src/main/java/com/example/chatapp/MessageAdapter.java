@@ -34,21 +34,29 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
 
     public void setData(List<Message> messages) {
         this.messagesList = new ArrayList<>(messages);
+        notifyDataSetChanged();
+    }
+
+    public void addEnd(Message message) {
+        messagesList.add(message);
+        notifyItemInserted(messagesList.size()-1);
+    }
+
+    public void removeItemAt(int index) {
+//        messagesList.remove(index);
+        notifyItemRemoved(index);
     }
 
     @NonNull
     @Override
     public MessageViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view;
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.message_bubble_view, parent, false);
         switch (viewType) {
             case INCOMING:
                 view = LayoutInflater.from(parent.getContext()).inflate(R.layout.message_bubble_view, parent, false);
                 break;
             case OUTGOING:
                 view = LayoutInflater.from(parent.getContext()).inflate(R.layout.out_message_bubble_view, parent, false);
-                break;
-            default:
-                view = LayoutInflater.from(parent.getContext()).inflate(R.layout.message_bubble_view, parent, false);
                 break;
         }
         return new MessageViewHolder(view);

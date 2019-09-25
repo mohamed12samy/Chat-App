@@ -23,8 +23,16 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".HostActivity"></activity>
-        <activity android:name=".ChatRoomActivity"></activity>
+        <activity android:name=".HostActivity">
+        </activity>
+        <activity android:name=".ChatRoomActivity">
+            <meta-data android:name="android.support.PARENT_ACTIVITY"
+                android:value=".HostActivity"/>
+            <intent-filter>
+                <action android:name="ChatRoomActivity"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
 
         <meta-data android:name="com.facebook.sdk.ApplicationId"
             android:value="@string/facebook_app_id"/>

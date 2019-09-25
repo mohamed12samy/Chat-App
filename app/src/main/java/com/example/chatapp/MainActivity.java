@@ -51,6 +51,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        sharedPreferences =getSharedPreferences("login", Context.MODE_PRIVATE);
 
         /*sharedPreferences = getSharedPreferences("login", Context.MODE_PRIVATE);
         if(sharedPreferences.contains("is_logged") && sharedPreferences.getBoolean("is_logged",false)){
@@ -216,9 +217,10 @@ public class MainActivity extends AppCompatActivity {
     public void onStart() {
         super.onStart();
         // Check if user is signed in (non-null) and update UI accordingly.
-        FirebaseUser currentUser = mAuth.getCurrentUser();
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser != null)
         {
+            //App.setmAuth(mAuth);
             App.setmFirebaseUser(currentUser);
             startActivity(new Intent(MainActivity.this,HostActivity.class));
             finish();

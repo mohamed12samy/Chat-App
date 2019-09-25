@@ -6,13 +6,13 @@ import android.net.Uri;
 import java.util.List;
 
 import androidx.annotation.NonNull;
+import androidx.core.util.Pair;
 import androidx.lifecycle.AndroidViewModel;
-import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 public class ChatRoomViewModel extends AndroidViewModel {
 
-    private MutableLiveData<List<Message>> messages;
+    private MutableLiveData<List<Pair<Message, String>>> messages;
     private Repository repository;
 
 
@@ -30,7 +30,7 @@ public class ChatRoomViewModel extends AndroidViewModel {
         return repository.getMyId();
     }
 
-    public MutableLiveData<List<Message>> getMessages() {
+    public MutableLiveData<List<Pair<Message, String>>> getMessages() {
         return messages;
     }
 

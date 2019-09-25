@@ -2,9 +2,9 @@ package com.example.chatapp;
 
 import android.net.Uri;
 import android.util.Log;
-import android.util.Pair;
 
 import androidx.annotation.NonNull;
+import androidx.core.util.Pair;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
@@ -13,18 +13,18 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.Timestamp;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentChange;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
-import com.google.firebase.iid.FirebaseInstanceId;
-import com.google.firebase.iid.InstanceIdResult;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
@@ -38,17 +38,26 @@ import javax.annotation.Nullable;
 public class Repository {
     private static Repository mRepository;
     private FirebaseFirestore db;
-    private MutableLiveData<List<Message>> messages;
+    private MutableLiveData<List<Pair<Message, String>>> messages;
     private String chatRoomId;
     private String secondUserId;
     private DocumentSnapshot lastMessageShownId;
-    private String myId = App.getmFirebaseUser().getEmail();
+    private ListenerRegistration messagesListener;
+    private boolean firstPage = true;
+    private String myId = "";
     private MutableLiveData<List<User>> users = new MutableLiveData<>();
     private MutableLiveData<List<Pair<User, Message>>> conversations = new MutableLiveData<>();
 
     private Repository() {
         db = App.getFirebaseFirestore();
         messages = new MutableLiveData<>();
+
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser != null) {
+
+            App.setmFirebaseUser(currentUser);
+            myId = App.getmFirebaseUser().getEmail();
+        }
     }
 
     public static synchronized Repository getInstance() {
@@ -63,13 +72,13 @@ public class Repository {
         String name = user.getDisplayName();
         String email = user.getEmail();
         String photo = String.valueOf(user.getPhotoUrl());
-         String token = App.getToken();
+        String token = App.getToken();
 
         Map<String, Object> mUser = new HashMap<>();
         mUser.put(App.NAME, name);
         mUser.put(App.EMAIL, email);
         mUser.put(App.URL_PHOTO, photo);
-        mUser.put(App.TOKEN,token);
+        mUser.put(App.TOKEN, token);
         db.collection("Users").document().set(mUser)
                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
@@ -88,7 +97,7 @@ public class Repository {
         return myId;
     }
 
-    public MutableLiveData<List<Message>> getMessages(final String secondUserId) {
+    public MutableLiveData<List<Pair<Message, String>>> getMessages(final String secondUserId) {
         Log.d("YUYU", secondUserId);
         this.secondUserId = secondUserId;
 
@@ -110,27 +119,94 @@ public class Repository {
                     }
                     if (!chatRoomFound) {
                         chatRoomId = null;
-                        messages.setValue(new ArrayList<Message>());
+                        messages.setValue(new ArrayList<Pair<Message, String>>());
                     } else {
-                        db.collection("ChatRooms")
-                                .document(chatRoomId)
-                                .collection("messages")
-                                .orderBy("timestamp", Query.Direction.DESCENDING)
-                                .limit(20)
-                                .addSnapshotListener(new EventListener<QuerySnapshot>() {
-                                    @Override
-                                    public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
-                                        List<Message> data = new ArrayList<>();
-                                        for (QueryDocumentSnapshot documentSnapshot : queryDocumentSnapshots) {
+                        if (firstPage) {
+                            db.collection("ChatRooms")
+                                    .document(chatRoomId)
+                                    .collection("messages")
+                                    .orderBy("timestamp", Query.Direction.DESCENDING)
+                                    .limit(20)
+                                    .get()
+                                    .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                                        @Override
+                                        public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                                            List<Pair<Message, String>> data = new ArrayList<>();
+                                            for (DocumentSnapshot documentSnapshot : queryDocumentSnapshots) {
+                                                Message message = documentSnapshot.toObject(Message.class);
+                                                if (!message.getIsDeleted()) {
+                                                    message.setId(documentSnapshot.getId());
+                                                    data.add(0, new Pair<>(message, "ADDEND"));
+                                                    Log.i("lastMessageShownId:", documentSnapshot.getId());
+                                                }
+                                                lastMessageShownId = documentSnapshot;
+                                            }
+                                            firstPage = false;
+                                            messages.setValue(data);
+                                            getMessages(secondUserId);
+                                        }
+                                    });
+                        } else {
+                            messagesListener = db.collection("ChatRooms")
+                                    .document(chatRoomId)
+                                    .collection("messages")
+                                    .orderBy("timestamp", Query.Direction.DESCENDING)
+                                    .limit(1)
+                                    .addSnapshotListener(new EventListener<QuerySnapshot>() {
+                                        @Override
+                                        public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
+                                            List<Pair<Message, String>> data = new ArrayList<>();
+                                            for (DocumentChange documentChange : queryDocumentSnapshots.getDocumentChanges()) {
+                                                Log.i("documentChange.getType",documentChange.getType()+" "+documentChange.getDocument().get("body").toString());
+                                                switch (documentChange.getType()) {
+                                                    case ADDED:
+                                                        Message message = documentChange.getDocument().toObject(Message.class);
+                                                        if (!message.getIsDeleted()) {
+                                                            message.setId(documentChange.getDocument().getId());
+                                                            data.add(0, new Pair<>(message, "ADDEND"));
+                                                            Log.i("added:", documentChange.getDocument().getId());
+                                                        }
+                                                        break;
+                                                    case MODIFIED:
+                                                        Message message2 = documentChange.getDocument().toObject(Message.class);
+                                                        Log.i("message2.getIsDeleted()",message2.getIsDeleted()+"");
+                                                        if (message2.getIsDeleted()) {
+                                                            message2.setId(documentChange.getDocument().getId());
+                                                            data.add(0, new Pair<>(message2, "REMOVE"));
+                                                            Log.i("modified:", documentChange.getDocument().getId());
+                                                            db.collection("ChatRooms")
+                                                                    .document(chatRoomId)
+                                                                    .collection("messages")
+                                                                    .document(documentChange.getDocument().getId())
+                                                                    .delete();
+                                                        }
+                                                        break;
+                                                    default:
+                                                        break;
+                                                }
+                                            }
+                                          /*  if(documentChange.getType() == DocumentChange.Type.ADDED) {
+                                                flag=0;//added
+                                                Message message = documentChange.getDocument().toObject(Message.class);
+                                                message.setId(documentChange.getDocument().getId());
+                                                data.add( message);
+                                                Log.i("pppppppppppppppppp:", documentChange.getDocument().getId());
+                                            }else if (documentChange.getType() == DocumentChange.Type.REMOVED){
+                                                flag = -1;
+                                            }*/
+
+
+                                        /* for (QueryDocumentSnapshot documentSnapshot : queryDocumentSnapshots) {
                                             Message message = documentSnapshot.toObject(Message.class);
                                             message.setId(documentSnapshot.getId());
                                             data.add(0,message);
                                             Log.i("lastMessageShownId:", documentSnapshot.getId());
                                             lastMessageShownId = documentSnapshot;
+                                        }*/
+
+                                            messages.setValue(data);
                                         }
-                                        messages.setValue(data);
-                                    }
-                                });
+                                    });
 //                        final CollectionReference docRef = db.collection("ChatRooms").document(chatRoomId)
 //                                .collection("messages");
 //
@@ -149,6 +225,7 @@ public class Repository {
 //                                        messages.setValue(data);
 //                                    }
 //                                });
+                        }
                     }
                 }
             }
@@ -169,11 +246,11 @@ public class Repository {
                     .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
                         @Override
                         public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-                            List<Message> data = messages.getValue();
+                            List<Pair<Message, String>> data = new ArrayList<>();
                             for (QueryDocumentSnapshot documentSnapshot : queryDocumentSnapshots) {
                                 Message message = documentSnapshot.toObject(Message.class);
                                 message.setId(documentSnapshot.getId());
-                                data.add(0, message);
+                                data.add(new Pair<>(message, "ADDSTART"));
                                 Log.i("lastMessageShownId:", documentSnapshot.getId());
                                 lastMessageShownId = documentSnapshot;
                             }
@@ -199,7 +276,7 @@ public class Repository {
                         public void onSuccess(DocumentReference documentReference) {
                             chatRoomId = documentReference.getId();
 
-                            final Message message = new Message(myId, body,image, Timestamp.now());
+                            final Message message = new Message(myId, body, image, Timestamp.now());
 
                             db.collection("ChatRooms").document(chatRoomId).collection("messages")
                                     .add(message)
@@ -207,7 +284,7 @@ public class Repository {
                                         @Override
                                         public void onSuccess(DocumentReference documentReference) {
 //                                            data = new ArrayList<>();
-                                            message.setId(documentReference.getId());
+//                                            message.setId(documentReference.getId());
                                             getMessages(secondUserId);
                                            /* data.add(message);
                                             messages.setValue(data);*/
@@ -216,13 +293,13 @@ public class Repository {
                         }
                     });
         } else {
-            final Message message = new Message(myId, body,image, Timestamp.now());
+            final Message message = new Message(myId, body, image, Timestamp.now());
             db.collection("ChatRooms").document(chatRoomId).collection("messages")
                     .add(message)
                     .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
                         @Override
                         public void onSuccess(DocumentReference documentReference) {
-                            message.setId(documentReference.getId());
+//                            message.setId(documentReference.getId());
                             /*data.add(message);
                             messages.setValue(data);*/
                         }
@@ -232,7 +309,7 @@ public class Repository {
 
     String chatRoomReceiver;
 
-    public void forwardMessage(final String body,final String image, final String receiverEmail) {
+    public void forwardMessage(final String body, final String image, final String receiverEmail) {
 
         db.collection("ChatRooms")
                 .whereArrayContains("users", App.getmFirebaseUser().getEmail())
@@ -262,7 +339,7 @@ public class Repository {
                                     @Override
                                     public void onSuccess(DocumentReference documentReference) {
                                         chatRoomReceiver = documentReference.getId();
-                                        final Message message = new Message(myId,body, image, Timestamp.now());
+                                        final Message message = new Message(myId, body, image, Timestamp.now());
                                         db.collection("ChatRooms").document(chatRoomReceiver)
                                                 .collection("messages")
                                                 .add(message)
@@ -274,7 +351,7 @@ public class Repository {
                                     }
                                 });
                     } else {
-                        final Message message = new Message(myId, body,image, Timestamp.now());
+                        final Message message = new Message(myId, body, image, Timestamp.now());
                         db.collection("ChatRooms").document(chatRoomReceiver)
                                 .collection("messages")
                                 .add(message)
@@ -354,13 +431,13 @@ public class Repository {
                                                             Message message1;
                                                             if (queryDocumentSnapshots.size() > 1) {
                                                                 message1 = queryDocumentSnapshots.getDocuments().get(1).toObject(Message.class);
-                                                                for(int i=0 ; i<list1.size() ; i++){
-                                                                    if(list1.get(i).first.getEmail().equals(user.getEmail())){
+                                                                for (int i = 0; i < list1.size(); i++) {
+                                                                    if (list1.get(i).first.getEmail().equals(user.getEmail())) {
                                                                         list1.remove(i);
                                                                         break;
                                                                     }
                                                                 }
-                                                               // list1.remove(new Pair<>(user, message1));
+                                                                // list1.remove(new Pair<>(user, message1));
                                                             }
                                                             list1.add(0, new Pair<>(user, message));
 
@@ -382,30 +459,27 @@ public class Repository {
 
 //    MutableLiveData<List<Message>> newMesssage = new MutableLiveData<>();
 
-    public void removeMessage(String id) {
+    public void removeMessage(final String id) {
         db.collection("ChatRooms").document(chatRoomId).collection("messages").document(id)
-                .delete()
-                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void aVoid) {
-                        Log.d("TAG", "DocumentSnapshot successfully deleted!");
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.w("TAG", "Error deleting document", e);
-                    }
-                });
+                .update("timestamp", Timestamp.now(), "isDeleted", true);
+        db.collection("ChatRooms").document(chatRoomId).collection("messages").document(id)
+                .update("timestamp", Timestamp.now(), "isDeleted", true);
+//        db.collection("ChatRooms")
+//                .document(chatRoomId)
+//                .collection("messages")
+//                .document(id)
+//                .delete();
     }
 
     public void onChatClose() {
         messages = new MutableLiveData<>();
         chatRoomId = null;
         secondUserId = null;
+        firstPage = true;
+        messagesListener.remove();
     }
 
-    public void storeImageToStorage(Uri imagUri){
+    public void storeImageToStorage(Uri imagUri) {
         final StorageReference photoRef = App.getPhotoReference().child(imagUri.getLastPathSegment());
         photoRef.putFile(imagUri).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
             @Override
@@ -414,7 +488,7 @@ public class Repository {
                     @Override
                     public void onSuccess(Uri uri) {
                         String imageUrl = uri.toString();
-                        sendMessage(null,imageUrl);
+                        sendMessage(null, imageUrl);
 
                     }
                 });

@@ -5,6 +5,7 @@ import android.content.Context;
 
 import androidx.multidex.MultiDex;
 
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
@@ -17,7 +18,7 @@ public class App extends Application {
     private static FirebaseUser mFirebaseUser;
     private static FirebaseStorage storage;
     private static StorageReference photoReference ;
-
+    private static FirebaseAuth mAuth;
 
 
     public final static String NAME = "name";
@@ -39,12 +40,22 @@ public class App extends Application {
         mFirebaseFirestore = FirebaseFirestore.getInstance();
         storage = FirebaseStorage.getInstance();
         photoReference = storage.getReference().child("images");
+        mAuth = FirebaseAuth.getInstance();
 
     }
 
     public static App getInstance() {
         return myApp;
     }
+
+    public static FirebaseAuth getmAuth() {
+        return mAuth;
+    }
+
+    public static void setmAuth(FirebaseAuth mAuth) {
+        App.mAuth = mAuth;
+    }
+
     public static FirebaseFirestore getFirebaseFirestore(){
         return mFirebaseFirestore;
     }

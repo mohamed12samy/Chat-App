@@ -2,9 +2,10 @@ package com.example.chatapp;
 
 import android.app.Application;
 import android.util.Log;
-import android.util.Pair;
+
 
 import androidx.annotation.NonNull;
+import androidx.core.util.Pair;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
